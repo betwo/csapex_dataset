@@ -11,4 +11,8 @@
       <description>Statistics Datasets for person_detection</description>
       <tags>dataset, people</tags>
     </class>
+    <class type="csapex::dataset::PeopleDatasetImporterLegacy" base_class_type="csapex::Node">
+      <description>Imports Datasets for person_detection (legacy version)</description>
+      <tags>dataset, people</tags>
+    </class>
 </library>
