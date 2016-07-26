@@ -1,0 +1,14 @@
+<library path="libcsapex_dataset_node">
+    <class type="csapex::dataset::PeopleDatasetExporter" base_class_type="csapex::Node">
+      <description>Exports Datasets for person_detection</description>
+      <tags>dataset, people</tags>
+    </class>
+    <class type="csapex::dataset::PeopleDatasetImporter" base_class_type="csapex::Node">
+      <description>Imports Datasets for person_detection</description>
+      <tags>dataset, people</tags>
+    </class>
+    <class type="csapex::dataset::PeopleDatasetStats" base_class_type="csapex::Node">
+      <description>Statistics Datasets for person_detection</description>
+      <tags>dataset, people</tags>
+    </class>
+</library>

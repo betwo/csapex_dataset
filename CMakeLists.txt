@@ -4,9 +4,12 @@ project(csapex_dataset)
 find_package(catkin REQUIRED COMPONENTS
     csapex
     csapex_core_plugins
+    csapex_vision
+    csapex_point_cloud
 )
 
 find_package(Boost REQUIRED COMPONENTS filesystem)
+find_package(PCL REQUIRED COMPONENTS common io)
 
 ###################################
 ## catkin specific configuration ##
@@ -27,10 +30,13 @@ catkin_package(
 
 include_directories(
     ${catkin_INCLUDE_DIRS}
+    ${Boost_INCLUDE_DIRS}
+    ${PCL_INCLUDE_DIRS}
 )
 
 file(GLOB sources
-
+    src/people/*.hpp
+    src/people/*.cpp
 )
 
 add_library(csapex_dataset_node
@@ -39,8 +45,18 @@ add_library(csapex_dataset_node
 
 target_link_libraries(csapex_dataset_node
     ${catkin_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${PCL_LIBRARIES}
 )
 
 #############
 ## Install ##
 #############
+
+install(FILES plugins.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+
+install(TARGETS csapex_dataset_node
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
