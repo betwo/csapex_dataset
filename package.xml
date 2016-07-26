@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package>
+  <name>csapex_dataset</name>
+  <version>0.0.0</version>
+  <description>The csapex_dataset package</description>
+
+  <maintainer email="philipp.kuhlmann@student.uni-tuebingen.de">Philipp Kuhlmann</maintainer>
+
+  <author email="philipp.kuhlmann@student.uni-tuebingen.de">Philipp Kuhlmann</author>
+  <author email="richard.hanten@uni-tuebingen.de">Richard Hanten</author>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>csapex</build_depend>
+  <build_depend>csapex_core_plugins</build_depend>
+  <run_depend>csapex</run_depend>
+  <run_depend>csapex_core_plugins</run_depend>
+
+
+  <export>
+    <csapex plugin="${prefix}/plugins.xml" />
+  </export>
+</package>
