@@ -15,8 +15,8 @@
 #include <csapex/param/interval_parameter.h>
 #include <csapex/param/output_progress_parameter.h>
 #include <csapex/param/range_parameter.h>
-#include <csapex/utility/timer.h>
-#include <csapex/utility/interlude.hpp>
+#include <csapex/profiling/timer.h>
+#include <csapex/profiling/interlude.hpp>
 
 #include <csapex_point_cloud/point_cloud_message.h>
 #include <csapex_vision/cv_mat_message.h>
