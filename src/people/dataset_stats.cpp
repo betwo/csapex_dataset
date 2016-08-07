@@ -8,7 +8,7 @@
 #include <csapex/param/parameter_factory.h>
 #include <csapex/param/interval_parameter.h>
 #include <csapex/utility/register_apex_plugin.h>
-#include <csapex_core_plugins/vector_message.h>
+#include <csapex/msg/generic_vector_message.hpp>
 #include <csapex_vision/roi_message.h>
 
 
