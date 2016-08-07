@@ -46,7 +46,7 @@ void PeopleDatasetExporter::setup(NodeModifier& node_modifier)
     in_depth_ = node_modifier.addInput<CvMatMessage>("depth");
     in_visual_ = node_modifier.addInput<CvMatMessage>("visual");
     in_pointcloud_ = node_modifier.addInput<PointCloudMessage>("pointcloud");
-    in_rois_ = node_modifier.addOptionalInput<VectorMessage, RoiMessage>("rois");
+    in_rois_ = node_modifier.addOptionalInput<AnyMessage>("rois (deprecated)");
     in_rois_gen_ = node_modifier.addOptionalInput<GenericVectorMessage, RoiMessage>("rois");
 }
 
@@ -64,9 +64,7 @@ void PeopleDatasetExporter::process()
     }
     if (msg::hasMessage(in_rois_))
     {
-        VectorMessage::ConstPtr rois = msg::getMessage<VectorMessage>(in_rois_);
-        for(const TokenData::ConstPtr& msg : rois->value)
-            rois_msg.push_back(*std::dynamic_pointer_cast<RoiMessage const>(msg));
+        throw std::runtime_error("VectorMessage is no longer available");
     }
 
     Entry entry;
