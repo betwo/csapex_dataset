@@ -12,6 +12,7 @@
 #include <csapex_vision/roi_message.h>
 #include <csapex/msg/generic_vector_message.hpp>
 
+
 using namespace csapex;
 using namespace dataset;
 using namespace people;
@@ -23,6 +24,9 @@ void ImportINRIAData::setup(NodeModifier &node_modifier)
 {
     out_image_ = node_modifier.addOutput<CvMatMessage>("Image");
     out_rois_ = node_modifier.addOutput<GenericVectorMessage, RoiMessage>("ROIs");
+
+    play_started_ = node_modifier.addEvent("Started");
+    play_finished_ = node_modifier.addEvent("Finished");
 }
 
 void ImportINRIAData::setupParameters(Parameterizable &parameters)
@@ -44,10 +48,11 @@ void ImportINRIAData::setupParameters(Parameterizable &parameters)
     param_play_index_ = std::dynamic_pointer_cast<param::RangeParameter>(param_play_index);
     std::function<bool()> show_index =
             [this]() {return samples_.size() > 0;};
-    addConditionalParameter(param_play_index_, show_index);
-    addConditionalParameter(param::ParameterFactory::declareRange("/play/rate", 0.0, 256.0, 5.0, 0.1),
-                            show_index,
-                            rate_);
+    parameters.addConditionalParameter(param_play_index_, show_index);
+    parameters.addConditionalParameter(param::ParameterFactory::declareRange("/play/rate", 0.0, 256.0, 5.0, 0.1),
+                                       show_index,
+                                       rate_);
+
 }
 
 void ImportINRIAData::process()
@@ -99,12 +104,13 @@ void ImportINRIAData::tick()
     } else {
         play_ = false;
         param_play_->set(play_);
-        /// send stopped
+        play_finished_->trigger();
     }
 }
 
 void ImportINRIAData::import()
 {
+    std::srand(neg_rng_seed_);
     std::string path = readParameter<std::string>("path");
     samples_.clear();
     Instance::Set neg_samples;
@@ -149,8 +155,8 @@ void ImportINRIAData::play()
 {
     play_ = param_play_->as<bool>();
     if(play_) {
-        /// send started;
+        play_started_->trigger();
     } else {
-        /// send stopped
+        play_finished_->trigger();
     }
 }

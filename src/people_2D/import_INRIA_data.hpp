@@ -34,6 +34,9 @@ private:
     csapex::Output *out_image_;
     csapex::Output *out_rois_;
 
+    csapex::Event  *play_started_;
+    csapex::Event  *play_finished_;
+
     double                     rate_;
     int                        neg_rng_seed_;
     bool                       play_;

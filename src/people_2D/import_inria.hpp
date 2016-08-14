@@ -259,6 +259,7 @@ inline std::vector<std::size_t> randomVector(const std::size_t size)
     for(std::size_t i = 0 ; i < size ; ++i){
         random_vector[i] = i;
     }
+
     std::random_shuffle(random_vector.begin(), random_vector.end());
     return random_vector;
 }
