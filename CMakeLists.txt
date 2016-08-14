@@ -35,8 +35,10 @@ include_directories(
 )
 
 file(GLOB sources
-    src/people/*.hpp
-    src/people/*.cpp
+    src/people_3D/*.hpp
+    src/people_3D/*.cpp
+    src/people_2D/*.hpp
+    src/people_2D/*.cpp
 )
 
 add_library(csapex_dataset_node
