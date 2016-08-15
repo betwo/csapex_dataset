@@ -4,7 +4,7 @@ project(csapex_dataset)
 find_package(catkin REQUIRED COMPONENTS
     csapex
     csapex_core_plugins
-    csapex_vision
+    csapex_opencv
     csapex_point_cloud
 )
 

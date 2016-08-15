@@ -9,7 +9,7 @@
 #include <csapex/param/interval_parameter.h>
 #include <csapex/utility/register_apex_plugin.h>
 #include <csapex/msg/generic_vector_message.hpp>
-#include <csapex_vision/roi_message.h>
+#include <csapex_opencv/roi_message.h>
 
 
 CSAPEX_REGISTER_CLASS(csapex::dataset::PeopleDatasetStats, csapex::Node)

@@ -3,7 +3,7 @@
 /// PROJECT
 #include <csapex/model/tickable_node.h>
 #include <csapex/model/connector_type.h>
-#include <csapex_vision/roi_message.h>
+#include <csapex_opencv/roi_message.h>
 
 /// SYSTEM
 #include <opencv2/opencv.hpp>

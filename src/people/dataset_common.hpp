@@ -1,6 +1,6 @@
 #pragma once
 
-#include <csapex_vision/roi_message.h>
+#include <csapex_opencv/roi_message.h>
 
 #include <unordered_map>
 #include <pcl/point_cloud.h>
