@@ -24,8 +24,6 @@
 /// SYSTEM
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <boost/assign.hpp>
-
 
 using namespace csapex;
 using namespace csapex::connection_types;
@@ -59,10 +57,11 @@ void PeopleDatasetImporterLegacy::setup(csapex::NodeModifier &node_modifier)
 
 void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
 {
-    std::map<std::string, int> ratio_selection = boost::assign::map_list_of
-            ("1:2", Ratio_1_to_2)
-            ("1:1", Ratio_1_to_1)
-            ("free", Ratio_free);
+    std::map<std::string, int> ratio_selection = {
+            {"1:2", Ratio_1_to_2},
+            {"1:1", Ratio_1_to_1},
+            {"free", Ratio_free}
+    };
     import_path_ = param::ParameterFactory::declareDirectoryInputPath("path", "");
     import_      = param::ParameterFactory::declareTrigger("import");
     use_random_  = param::ParameterFactory::declareBool("random", false);;
