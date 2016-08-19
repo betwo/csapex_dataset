@@ -42,6 +42,7 @@ private:
     csapex::Slot   *play_stop_;
     csapex::Slot   *play_reset_;
 
+    std::string                import_path_;
     double                     rate_;
     int                        neg_rng_seed_;
     bool                       play_;
@@ -49,7 +50,6 @@ private:
     param::ValueParameter::Ptr param_play_;
     param::RangeParameter::Ptr param_play_index_;
     cv::Size                   neg_window_size_;
-
 
     void import();
     void play();
