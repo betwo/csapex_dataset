@@ -27,6 +27,16 @@ void ImportINRIAData::setup(NodeModifier &node_modifier)
 
     play_started_ = node_modifier.addEvent("Started");
     play_finished_ = node_modifier.addEvent("Finished");
+    play_stopped_ = node_modifier.addEvent("Stopped");
+
+    play_start_ = node_modifier.addSlot("Start",
+                                        std::bind(&ImportINRIAData::slotPlay, this));
+    play_stop_ = node_modifier.addSlot("Stop",
+                                        std::bind(&ImportINRIAData::slotStop, this));
+    play_reset_ = node_modifier.addSlot("Reset",
+                                        std::bind(&ImportINRIAData::slotReset, this));
+
+
 }
 
 void ImportINRIAData::setupParameters(Parameterizable &parameters)
@@ -157,6 +167,33 @@ void ImportINRIAData::play()
     if(play_) {
         play_started_->trigger();
     } else {
-        play_finished_->trigger();
+        play_stopped_->trigger();
     }
 }
+
+void ImportINRIAData::slotPlay()
+{
+    if(!play_) {
+        play_ = true;
+        param_play_->set(true);
+        play_started_->trigger();
+    }
+}
+
+void ImportINRIAData::slotStop()
+{
+    if(play_) {
+        play_ = false;
+        param_play_->set(false);
+        play_stopped_->trigger();
+    }
+}
+
+void ImportINRIAData::slotReset()
+{
+    if(samples_.size() > 0) {
+        param_play_index_->set(0);
+        play_index_ = 0;
+    }
+}
+

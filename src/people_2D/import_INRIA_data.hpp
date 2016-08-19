@@ -36,6 +36,11 @@ private:
 
     csapex::Event  *play_started_;
     csapex::Event  *play_finished_;
+    csapex::Event  *play_stopped_;
+
+    csapex::Slot   *play_start_;
+    csapex::Slot   *play_stop_;
+    csapex::Slot   *play_reset_;
 
     double                     rate_;
     int                        neg_rng_seed_;
@@ -48,6 +53,9 @@ private:
 
     void import();
     void play();
+    void slotPlay();
+    void slotReset();
+    void slotStop();
 
 };
 
