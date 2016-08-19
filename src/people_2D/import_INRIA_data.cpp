@@ -111,7 +111,7 @@ void ImportINRIAData::tick()
 void ImportINRIAData::import()
 {
     std::srand(neg_rng_seed_);
-    std::string path = readParameter<std::string>("path");
+    std::string path = readParameter<std::string>("/path");
     samples_.clear();
     Instance::Set neg_samples;
     Instance::Set pos_samples;
