@@ -144,8 +144,11 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
     addParameter(play_btn_, [this](csapex::param::Parameter*) {
         play_->set(true);
     });
+    addParameter(param::ParameterFactory::declareBool("hold", false),
+                 hold_);
     addConditionalParameter(prep_progress_, playing);
     addConditionalParameter(play_progress_, playing);
+
 
     addParameter(param::ParameterFactory::declareRange("hz", 1, 60, 2, 1),
                  std::bind(&PeopleDatasetImporterLegacy::updateHz, this));
@@ -184,7 +187,8 @@ void PeopleDatasetImporterLegacy::tick()
         msg::publish(out_pointcloud_, pcl_msg);
         msg::publish<GenericVectorMessage, RoiMessage>(out_rois_, roi_msg);
 
-        ++play_pos_;
+        if(!hold_)
+            ++play_pos_;
         auto *prog = (csapex::param::OutputProgressParameter*) play_progress_.get();
         prog->setProgress(play_pos_ + 1, play_set_.size());
 

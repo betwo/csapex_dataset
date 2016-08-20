@@ -80,6 +80,7 @@ private:
     std::size_t      play_pos_;
     bool             lets_play_;
     bool             stride_;
+    bool             hold_;
 
     std::minstd_rand random_;
 
