@@ -44,6 +44,7 @@ private:
     param::ValueParameter::Ptr param_play_;
     param::RangeParameter::Ptr param_play_index_;
     cv::Size                   neg_window_size_;
+    std::string                path_;
 
 
     void import();

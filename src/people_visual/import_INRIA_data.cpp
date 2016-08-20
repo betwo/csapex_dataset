@@ -32,7 +32,7 @@ void ImportINRIAData::setup(NodeModifier &node_modifier)
 void ImportINRIAData::setupParameters(Parameterizable &parameters)
 {
     parameters.addParameter(param::ParameterFactory::declareDirectoryInputPath("/path", ""),
-                            std::bind(&ImportINRIAData::import, this));
+                            path_);
     parameters.addParameter(param::ParameterFactory::declareRange("/negative/window/width", 10, 640, 128, 1),
                             neg_window_size_.width);
     parameters.addParameter(param::ParameterFactory::declareRange("/negative/window/height", 10, 480, 64, 1),
@@ -62,6 +62,9 @@ void ImportINRIAData::process()
 
 void ImportINRIAData::tick()
 {
+    if(samples_.empty() && path_ != "")
+        import();
+
     if(!play_)
         return;
 
@@ -111,13 +114,12 @@ void ImportINRIAData::tick()
 void ImportINRIAData::import()
 {
     std::srand(neg_rng_seed_);
-    std::string path = readParameter<std::string>("path");
     samples_.clear();
     Instance::Set neg_samples;
     Instance::Set pos_samples;
     std::size_t pos_sample_count;
     std::size_t neg_sample_count;
-    readFolder(path, pos_samples, neg_samples, pos_sample_count, neg_sample_count);
+    readFolder(path_, pos_samples, neg_samples, pos_sample_count, neg_sample_count);
 
     if(neg_sample_count > pos_sample_count) {
         std::vector<std::size_t> random_vector = randomVector(neg_sample_count);
@@ -149,6 +151,7 @@ void ImportINRIAData::import()
     samples_.insert(neg_samples.begin(), neg_samples.end());
 
     param_play_index_->setMax((int) samples_.size() - 1);
+    param_play_index_->set((int) 0);
 }
 
 void ImportINRIAData::play()
