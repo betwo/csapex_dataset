@@ -26,8 +26,6 @@ public:
     void tick() override;
 
 private:
-//    enum ImportState {None, Failed, Imported};
-//    std::atomic<ImportState> import_state;
 
     Instance::Set samples_;
 
