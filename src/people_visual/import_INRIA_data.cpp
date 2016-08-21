@@ -72,11 +72,12 @@ void ImportINRIAData::process()
 
 void ImportINRIAData::tick()
 {
-    if(samples_.empty() && path_ != "")
-        import();
 
     if(!play_)
         return;
+
+    if(samples_.empty() && path_ != "")
+        import();
 
     play_index_ = param_play_index_->as<int>();
 
