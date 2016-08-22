@@ -49,6 +49,8 @@ void ImportINRIAData::setupParameters(Parameterizable &parameters)
                             neg_window_size_.height);
     parameters.addParameter(param::ParameterFactory::declareValue("/negative/rng/seed", 0),
                             neg_rng_seed_);
+    parameters.addParameter(param::ParameterFactory::declareBool("/negative/do_sample", true),
+                            neg_do_sample_);
 
     param::Parameter::Ptr param_play = param::ParameterFactory::declareBool("/play", false);
     param_play_ = std::dynamic_pointer_cast<param::ValueParameter>(param_play);
@@ -132,7 +134,7 @@ void ImportINRIAData::import()
     std::size_t neg_sample_count;
     readFolder(path_, pos_samples, neg_samples, pos_sample_count, neg_sample_count);
 
-    if(neg_sample_count > pos_sample_count) {
+    if(neg_sample_count > pos_sample_count && neg_do_sample_) {
         std::vector<std::size_t> random_vector = randomVector(neg_sample_count);
         std::sort(random_vector.begin(), random_vector.begin() + pos_sample_count + 1);
 

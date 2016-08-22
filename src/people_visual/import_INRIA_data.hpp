@@ -42,6 +42,7 @@ private:
 
     double                     rate_;
     int                        neg_rng_seed_;
+    bool                       neg_do_sample_;
     bool                       play_;
     std::size_t                play_index_;
     param::ValueParameter::Ptr param_play_;
