@@ -20,7 +20,6 @@ namespace dataset
         csapex::Input* in_visual_;
         csapex::Input* in_pointcloud_;
         csapex::Input* in_rois_;
-        csapex::Input* in_rois_gen_;
 
         std::string directory_;
         int class_;

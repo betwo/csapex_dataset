@@ -43,42 +43,38 @@ void PeopleDatasetExporter::setupParameters(Parameterizable& parameters)
 
 void PeopleDatasetExporter::setup(NodeModifier& node_modifier)
 {
-    in_depth_ = node_modifier.addInput<CvMatMessage>("depth");
-    in_visual_ = node_modifier.addInput<CvMatMessage>("visual");
     in_pointcloud_ = node_modifier.addInput<PointCloudMessage>("pointcloud");
-    in_rois_ = node_modifier.addOptionalInput<AnyMessage>("rois (deprecated)");
-    in_rois_gen_ = node_modifier.addOptionalInput<GenericVectorMessage, RoiMessage>("rois");
+    in_rois_ = node_modifier.addInput<GenericVectorMessage, RoiMessage>("rois");
+    in_visual_ = node_modifier.addOptionalInput<CvMatMessage>("visual");
+    in_depth_ = node_modifier.addOptionalInput<CvMatMessage>("depth");
 }
 
 void PeopleDatasetExporter::process()
 {
-    CvMatMessage::ConstPtr depth_msg = msg::getMessage<CvMatMessage>(in_depth_);
-    CvMatMessage::ConstPtr visual_msg = msg::getMessage<CvMatMessage>(in_visual_);
     PointCloudMessage::ConstPtr pointcloud_msg = msg::getMessage<PointCloudMessage>(in_pointcloud_);
-    std::vector<RoiMessage> rois_msg;
+    std::shared_ptr<std::vector<RoiMessage> const> rois_msg = msg::getMessage<GenericVectorMessage, RoiMessage>(in_rois_);
 
-    if (msg::hasMessage(in_rois_gen_))
-    {
-        std::shared_ptr<std::vector<RoiMessage> const> rois_vector_msg = msg::getMessage<GenericVectorMessage, RoiMessage>(in_rois_gen_);
-        rois_msg = *rois_vector_msg;
-    }
-    if (msg::hasMessage(in_rois_))
-    {
-        throw std::runtime_error("VectorMessage is no longer available");
-    }
+    CvMatMessage::ConstPtr depth_msg;
+    if (msg::hasMessage(in_depth_))
+            depth_msg = msg::getMessage<CvMatMessage>(in_depth_);
+    CvMatMessage::ConstPtr visual_msg;
+    if (msg::hasMessage(in_visual_))
+        visual_msg = msg::getMessage<CvMatMessage>(in_visual_);
 
     Entry entry;
     entry.meta.id = std::to_string(pointcloud_msg->stamp_micro_seconds);
     entry.meta.timestamp = pointcloud_msg->stamp_micro_seconds;
-    std::copy_if(rois_msg.begin(), rois_msg.end(),
+    std::copy_if(rois_msg->begin(), rois_msg->end(),
                  std::back_inserter(entry.meta.rois),
                  [=](const RoiMessage& msg) { return msg.value.classification() == class_; });
 
     if (only_with_rois_ && entry.meta.rois.empty())
         return;
 
-    entry.depth = depth_msg->value;
-    entry.visual = visual_msg->value;
+    if (depth_msg)
+        entry.depth = depth_msg->value;
+    if (visual_msg)
+        entry.visual = visual_msg->value;
     auto pcl = boost::get<typename pcl::PointCloud<pcl::PointXYZI>::Ptr>(pointcloud_msg->value);
     if (pcl)
         entry.pointcloud = *(pcl.get());
