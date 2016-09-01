@@ -19,4 +19,8 @@
       <description>Import the INRIA dataset.</description>
       <tags>dataset, people</tags>
     </class>
+    <class type="csapex::ROIPassthrough" base_class_type="csapex::Node">
+      <description>Passthrough filter for ROIs</description>
+      <tags>dataset, people</tags>
+    </class>
 </library>
