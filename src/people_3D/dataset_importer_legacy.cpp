@@ -24,6 +24,8 @@
 /// SYSTEM
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include <pcl/PCLPointCloud2.h>
+#include <boost/mpl/for_each.hpp>
 
 using namespace csapex;
 using namespace csapex::connection_types;
@@ -159,6 +161,59 @@ void PeopleDatasetImporterLegacy::process()
 
 }
 
+namespace
+{
+
+struct loader
+{
+    loader(connection_types::PointCloudMessage::Ptr& out, const std::string& path) :
+        out_(out),
+        success_(false)
+    {
+        pcl::io::loadPCDFile(path, cloud_);
+    }
+
+    template<typename PointT>
+    void operator()(PointT& pt)
+    {
+        if (success_)
+            return;
+
+        std::vector<pcl::PCLPointField> fields;
+        pcl::for_each_type<typename pcl::traits::fieldList<PointT>::type>(pcl::detail::FieldAdder<PointT>(fields));
+
+        const std::vector<pcl::PCLPointField>& reference = cloud_.fields;
+
+        if (fields.size() != reference.size())
+            return;
+
+        for (std::size_t d = 0; d < fields.size(); ++d) {
+            bool found = false;
+            for (std::size_t f = 0; f < reference.size() && !found; ++f) {
+                if (fields[d].name == reference[f].name)
+                    found = true;
+            }
+
+            if (!found)
+                return;
+        }
+
+        success_ = true;
+        typename pcl::PointCloud<PointT>::Ptr cloud(new pcl::PointCloud<PointT>);
+        pcl::fromPCLPointCloud2(cloud_, *cloud);
+        out_->value = cloud;
+    }
+
+private:
+    connection_types::PointCloudMessage::Ptr& out_;
+    pcl::PCLPointCloud2 cloud_;
+
+
+    bool success_;
+};
+
+}
+
 void PeopleDatasetImporterLegacy::tick()
 {
     if(play_pos_ < play_set_.size() && lets_play_) {
@@ -168,8 +223,6 @@ void PeopleDatasetImporterLegacy::tick()
         CvMatMessage::Ptr      depth_msg(new CvMatMessage(enc::depth, entry.ts));
         CvMatMessage::Ptr      img_msg(new CvMatMessage(enc::bgr, entry.ts));
         PointCloudMessage::Ptr pcl_msg(new PointCloudMessage("camera_depth_optical_frame", entry.ts));
-        pcl::PointCloud<pcl::PointXYZ>::Ptr
-                cloud (new pcl::PointCloud<pcl::PointXYZ>);
         std::shared_ptr<std::vector<RoiMessage>> roi_msg(new std::vector<RoiMessage>);
 
         cv::FileStorage depth_fs(entry.path_depth.string(), cv::FileStorage::READ);
@@ -178,8 +231,10 @@ void PeopleDatasetImporterLegacy::tick()
         img_msg->value = cv::imread(entry.path_rgb.string(), cv::IMREAD_UNCHANGED);
         if(img_msg->value.channels() == 1)
             img_msg->setEncoding(enc::mono);
-        pcl::io::loadPCDFile<pcl::PointXYZ>(entry.path_pcl.string(), *cloud);
-        pcl_msg->value = cloud;
+
+        loader loader(pcl_msg, entry.path_pcl.string());
+        boost::mpl::for_each<connection_types::PointCloudPointTypes>( loader );
+
         roi_msg->assign(entry.rois.begin(), entry.rois.end());
 
         msg::publish(out_depth_image_, depth_msg);
