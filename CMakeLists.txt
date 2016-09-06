@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
     csapex_core_plugins
     csapex_opencv
     csapex_point_cloud
+    csapex_evaluation
 )
 
 find_package(Boost REQUIRED COMPONENTS filesystem)
