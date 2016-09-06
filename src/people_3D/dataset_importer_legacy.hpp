@@ -71,7 +71,7 @@ private:
     bfs::path root_path_;
     enum ContentType {DEPTH, PCL, VISUAL, ROI};
     enum ClassificationType {BACKGROUND = 0, HUMAN = 1, HUMAN_PART = 2};
-    cv::Scalar colors_[3] = {cv::Scalar(0,0,255), cv::Scalar(255), cv::Scalar(255,127)};
+    cv::Scalar colors_[3] = {cv::Scalar(0,0,255), cv::Scalar(255), cv::Scalar(0, 255, 255)};
     const std::map<ContentType, bfs::path> dir_structure_;
     const std::map<ContentType, bfs::path> file_types_;
 
