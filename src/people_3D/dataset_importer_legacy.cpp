@@ -136,7 +136,7 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
                             non_human_generation,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
-    addConditionalParameter(param::ParameterFactory::declareBool("ignore partly visible humans", true),
+    addConditionalParameter(param::ParameterFactory::declareBool("publish partly visible humans", true),
                             non_human_generation,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
@@ -150,7 +150,7 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
     addConditionalParameter(play_progress_, playing);
 
 
-    addParameter(param::ParameterFactory::declareRange("hz", 1, 60, 2, 1),
+    addParameter(param::ParameterFactory::declareRange("hz", 0, 512, 2, 1),
                  std::bind(&PeopleDatasetImporterLegacy::updateHz, this));
 }
 
@@ -180,7 +180,17 @@ void PeopleDatasetImporterLegacy::tick()
             img_msg->setEncoding(enc::mono);
         pcl::io::loadPCDFile<pcl::PointXYZ>(entry.path_pcl.string(), *cloud);
         pcl_msg->value = cloud;
-        roi_msg->assign(entry.rois.begin(), entry.rois.end());
+
+        if(readParameter<bool>("publish partly visible humans")) {
+            roi_msg->assign(entry.rois.begin(), entry.rois.end());
+        } else {
+            for(auto &r : entry.rois) {
+                if(r.value.classification() == HUMAN_PART)
+                    continue;
+                roi_msg->emplace_back(r);
+            }
+        }
+
 
         msg::publish(out_depth_image_, depth_msg);
         msg::publish(out_bgr_image_, img_msg);
@@ -260,7 +270,10 @@ void PeopleDatasetImporterLegacy::resetPlaySet()
 void PeopleDatasetImporterLegacy::updateHz()
 {
     int hz = readParameter<int>("hz");
-    setTickFrequency(hz);
+    if(hz == 0)
+        setTickFrequency(-1);
+    else
+        setTickFrequency(hz);
 }
 
 void PeopleDatasetImporterLegacy::createEntry(const std::string &id,
@@ -441,7 +454,7 @@ void PeopleDatasetImporterLegacy::prepareThePlaySet()
         if(readParameter<bool>("generate non-human rois")) {
             std::size_t positives = 0;
             bool ignore_partly_visible =
-                    readParameter<bool>("ignore partly visible humans");
+                    readParameter<bool>("publish partly visible humans");
             int ratio;
             switch(readParameter<int>("ratio")) {
             case Ratio_1_to_1:
@@ -454,7 +467,7 @@ void PeopleDatasetImporterLegacy::prepareThePlaySet()
                 ratio = -1;
             }
 
-
+            //// update this shit here
             if(ignore_partly_visible) {
                 for(auto &entry : play_set_) {
                     for(RoiMessage &roi : entry.rois) {
@@ -499,8 +512,7 @@ void PeopleDatasetImporterLegacy::prepareThePlaySet()
                 bool interfering = false;
                 for(RoiMessage &m : entry.rois) {
                     cv::Rect msg_rect = m.value.rect();
-                    interfering |= (msg_rect & roi).area() > 0 ||
-                           (ignore_partly_visible && m.value.classification() == HUMAN_PART);
+                    interfering |= (msg_rect & roi).area() > 0;
                     if(interfering)
                         break;
                 }
