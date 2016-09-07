@@ -172,20 +172,23 @@ void MatchingROIEvaluator::process()
         boost::apply_visitor(filter, in_cloud->value);
     }
 
-    std::map<int, int> match_map;
-
+    std::vector<bool> used_predictions;
+    std::generate_n(std::back_inserter(used_predictions), rois_prediction.size(), []() { return false; });
+    std::vector<bool> used_ground_truth;
+    std::generate_n(std::back_inserter(used_ground_truth), rois_ground_truth.size(), []() { return false; });
     // check ground truth -> predictions
     // -> true positive, false negative
     for (int i = 0; i < rois_ground_truth.size(); ++i)
     {
         const RoiMessage& roi_ground_truth = rois_ground_truth[i];
-        if (!is_positive(roi_ground_truth.value))
-            continue;
 
         double max_overlap = std::numeric_limits<double>::min();
         int max_idx = -1;
         for (std::size_t j = 0; j < rois_prediction.size(); ++j)
         {
+            if (used_predictions[j])
+                continue;
+
             const RoiMessage& roi_prediction = rois_prediction[j];
 
             double overlap = calc_overlap(roi_ground_truth.value.rect(), roi_prediction.value.rect());
@@ -207,7 +210,8 @@ void MatchingROIEvaluator::process()
         {
             // found match
             confusion_.reportClassification(1, 1);
-            match_map.emplace(max_idx, i);
+            used_predictions[max_idx] = true;
+            used_ground_truth[i] = true;
         }
         else
         {
@@ -221,60 +225,34 @@ void MatchingROIEvaluator::process()
     // -> false positive, true negative
     for (int i = 0; i < rois_prediction.size(); ++i)
     {
+        if (used_predictions[i])
+            continue;
+
         const RoiMessage& roi_prediction = rois_prediction[i];
 
-        double max_overlap = std::numeric_limits<double>::min();
-        int max_idx = -1;
+        bool matched = false;
         for (std::size_t j = 0; j < rois_ground_truth.size(); ++j)
         {
+            if (used_ground_truth[i])
+                continue;
+
             const RoiMessage& roi_ground_truth = rois_ground_truth[j];
 
             double overlap = calc_overlap(roi_ground_truth.value.rect(), roi_prediction.value.rect());
-            if (overlap < min_overlap_)
-                continue;
-
-            if (overlap > max_overlap)
+            if (overlap >= min_overlap_)
             {
-                max_overlap = overlap;
-                max_idx = j;
+                matched = true;
+                break;
             }
         }
 
-        if (max_idx == -1)
+        if (!matched)
         {
             // not matched -> false positive, true negative
             if (is_positive(roi_prediction.value))
                 confusion_.reportClassification(0, 1);
             else
                 confusion_.reportClassification(0, 0);
-        }
-        else
-        {
-            // matched -> check if duplicate -> add penalty
-
-            // allow duplicated negative classifications
-            if (!is_positive(roi_prediction.value))
-                continue;
-
-            // check if previously matched
-            auto itr = match_map.find(i);
-            if (itr == match_map.end())
-            {
-                // no previous match, but here? HUH?!
-                std::cout << "boeses im busch" << std::endl;
-            }
-            else
-            {
-                // check if matched with same
-                const std::pair<int, int>& match = *itr;
-                if (match.second == max_idx)
-                    continue;
-                else
-                {
-                    // add duplicate penalty
-                    confusion_.reportClassification(1, 0);
-                }
-            }
         }
     }
 
