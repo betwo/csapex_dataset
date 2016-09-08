@@ -69,18 +69,27 @@ void PeopleDatasetStats::load()
     std::advance(end, std::min<std::size_t>(entries.size(), range->upper<int>()));
 
     const std::size_t frames = std::distance(begin, end);
-    const std::size_t labels = std::accumulate(begin, end, 0,
-                                               [](std::size_t prev, const MetaEntry& entry) { return prev + entry.rois.size(); });
-    const double labels_per_frame = static_cast<double>(labels) / static_cast<double>(frames);
-    const auto duration_minmax = std::minmax_element(begin, end, [](const MetaEntry& a, const MetaEntry& b) { return a.timestamp < b.timestamp; });
-    const ulong duration_s = (duration_minmax.second->timestamp - duration_minmax.first->timestamp) % 60;
-    const ulong duration_min = (duration_minmax.second->timestamp - duration_minmax.first->timestamp) / 60;
+    std::map<int, std::size_t> labels;
+    for (auto itr = begin; itr != end; ++itr)
+    {
+        const MetaEntry& entry = *itr;
+        for (const ROIType& roi : entry.rois)
+            labels[roi.value.classification()] += 1;
+    }
+    const std::size_t total_labels = std::accumulate(labels.begin(), labels.end(), 0,
+                                               [](std::size_t prev, const std::pair<int, std::size_t>& entry) { return prev + entry.second; });
+    const double labels_per_frame = static_cast<double>(total_labels) / static_cast<double>(frames);
+//    const auto duration_minmax = std::minmax_element(begin, end, [](const MetaEntry& a, const MetaEntry& b) { return a.timestamp < b.timestamp; });
+//    const ulong duration_s = (duration_minmax.second->timestamp - duration_minmax.first->timestamp) % 60;
+//    const ulong duration_min = (duration_minmax.second->timestamp - duration_minmax.first->timestamp) / 60;
 
     std::ostringstream os;
     os << "Frames:       " << frames << std::endl;
-    os << "Labels:       " << labels << std::endl;
+    os << "Labels:       " << total_labels << std::endl;
     os << "Labels/Frame: " << labels_per_frame << std::endl;
-    os << "Duration:     " << duration_min << "min" << duration_s << "s" << std::endl;
+    for (const auto& entry : labels)
+        os << "Labels [" << entry.first << "]: " << entry.second << std::endl;
+//    os << "Duration:     " << duration_min << "min" << duration_s << "s" << std::endl;
     stats_ = os.str();
 }
 
