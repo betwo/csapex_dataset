@@ -8,6 +8,9 @@ namespace csapex
 class ROIPassthrough : public Node
 {
 public:
+    enum Method { MEAN, MEDIAN };
+
+public:
     void setupParameters(csapex::Parameterizable& parameters) override;
     void setup(csapex::NodeModifier& node_modifier) override;
     void process() override;
@@ -22,5 +25,6 @@ private:
 
     std::pair<double, double> distance_;
     int min_point_count_;
+    int method_;
 };
 }

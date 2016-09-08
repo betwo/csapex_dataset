@@ -17,6 +17,10 @@ using namespace csapex::connection_types;
 
 void ROIPassthrough::setupParameters(csapex::Parameterizable& parameters)
 {
+    parameters.addParameter(param::ParameterFactory::declareParameterSet<int>("method",
+                                                                              {{"mean", MEAN}, {"median", MEDIAN}},
+                                                                              MEAN),
+                            method_);
     parameters.addParameter(param::ParameterFactory::declareInterval("distance", -100.0, 100.0, 0.5, 5.0, 0.01),
                             distance_);
     parameters.addParameter(param::ParameterFactory::declareRange("min_point_count", 0, 100000, 0, 1),
@@ -42,36 +46,77 @@ namespace
     inline bool check_filter(const RoiMessage &roi,
                              const typename pcl::PointCloud<PointT>::ConstPtr& cloud,
                              const std::pair<double, double>& distance,
-                             int min_point_count)
+                             int min_point_count,
+                             ROIPassthrough::Method method)
     {
-        std::size_t valid_points = 0;
-        double      mean_depth = 0.0;
         cv::Rect rect = roi.value.rect() & cv::Rect(0, 0, cloud->width, cloud->height);
 
-        for(int i = rect.y ; (i < rect.y + rect.height); ++i) {
-            for(int j = rect.x ; (j < rect.x + rect.width); ++j) {
-                const PointT& p = cloud->at(j, i);
-                if(std::isnan(p.x) ||
-                        std::isnan(p.y) ||
-                            std::isnan(p.z))
-                    continue;
+        if (method == ROIPassthrough::Method::MEAN)
+        {
+            std::size_t valid_points = 0;
+            double      mean_depth = 0.0;
 
-                if(p.x == 0.f &&
-                        p.y == 0.f &&
-                            p.z == 0.f)
-                    continue;
+            for(int i = rect.y ; (i < rect.y + rect.height); ++i) {
+                for(int j = rect.x ; (j < rect.x + rect.width); ++j) {
+                    const PointT& p = cloud->at(j, i);
+                    if(std::isnan(p.x) ||
+                            std::isnan(p.y) ||
+                                std::isnan(p.z))
+                        continue;
 
-                mean_depth += p.x;
-                ++valid_points;
+                    if(p.x == 0.f &&
+                            p.y == 0.f &&
+                                p.z == 0.f)
+                        continue;
+
+                    mean_depth += p.x;
+                    ++valid_points;
+                }
+            }
+
+            mean_depth /= fmax(1, valid_points);
+            bool constraints_apply = (int) valid_points > min_point_count &&
+                                           mean_depth >= distance.first &&
+                                           mean_depth <= distance.second;
+
+            return constraints_apply;
+        }
+        else if (method == ROIPassthrough::Method::MEDIAN)
+        {
+            std::vector<double> depths;
+
+            for(int i = rect.y ; (i < rect.y + rect.height); ++i) {
+                for(int j = rect.x ; (j < rect.x + rect.width); ++j) {
+                    const PointT& p = cloud->at(j, i);
+                    if(std::isnan(p.x) ||
+                            std::isnan(p.y) ||
+                                std::isnan(p.z))
+                        continue;
+
+                    if(p.x == 0.f &&
+                            p.y == 0.f &&
+                                p.z == 0.f)
+                        continue;
+
+                    depths.push_back(p.x);
+                }
+            }
+
+            if (depths.empty())
+                return false;
+            else
+            {
+                std::sort(depths.begin(), depths.end());
+                double median_depth = depths[depths.size() / 2];
+                bool constraints_apply = (int) depths.size() > min_point_count &&
+                                               median_depth >= distance.first &&
+                                               median_depth <= distance.second;
+
+                return constraints_apply;
             }
         }
-
-        mean_depth /= fmax(1, valid_points);
-        bool constraints_apply = (int) valid_points > min_point_count &&
-                                       mean_depth >= distance.first &&
-                                       mean_depth <= distance.second;
-
-        return constraints_apply;
+        else
+            throw std::runtime_error("Invalid method type!");
     }
 }
 
@@ -83,8 +128,12 @@ void ROIPassthrough::inputCloud(typename pcl::PointCloud<PointT>::ConstPtr cloud
     std::shared_ptr<std::vector<RoiMessage>> out_rois = std::make_shared<std::vector<RoiMessage>>();
     for (const RoiMessage& msg : *rois_msg)
     {
-        if (check_filter<PointT>(msg, cloud, distance_, min_point_count_))
-            out_rois->push_back(msg);
+        out_rois->push_back(msg);
+        if (!check_filter<PointT>(msg, cloud, distance_, min_point_count_, static_cast<Method>(method_)))
+        {
+            out_rois->back().value.setClassification(2);
+            out_rois->back().value.setColor(cv::Scalar(255, 255, 0));
+        }
     }
 
     msg::publish<GenericVectorMessage, RoiMessage>(out_rois_, out_rois);
