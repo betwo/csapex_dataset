@@ -67,6 +67,7 @@ private:
     csapex::param::Parameter::Ptr prep_progress_;
     csapex::param::Parameter::Ptr non_human_rois_;
     csapex::param::Parameter::Ptr ratio_;
+    csapex::param::Parameter::Ptr kls;
 
     bfs::path root_path_;
     enum ContentType {DEPTH, PCL, VISUAL, ROI};
@@ -82,7 +83,9 @@ private:
     bool             stride_;
     bool             hold_;
 
+
     std::minstd_rand random_;
+
 
     void checkDirectoryStructure() const;
     void import();

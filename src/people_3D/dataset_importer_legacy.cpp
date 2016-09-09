@@ -139,8 +139,11 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
     addConditionalParameter(param::ParameterFactory::declareBool("publish partly visible humans", true),
-                            non_human_generation,
+                            not_playing,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
+
+
+
 
     addParameter(play_, std::bind(&PeopleDatasetImporterLegacy::play, this));
     addParameter(play_btn_, [this](csapex::param::Parameter*) {
