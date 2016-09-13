@@ -25,6 +25,8 @@ void ROIPassthrough::setupParameters(csapex::Parameterizable& parameters)
                             distance_);
     parameters.addParameter(param::ParameterFactory::declareRange("min_point_count", 0, 100000, 0, 1),
                             min_point_count_);
+    parameters.addParameter(param::ParameterFactory::declareBool("remove invalid", true),
+                            remove_);
 }
 
 void ROIPassthrough::setup(csapex::NodeModifier& node_modifier)
@@ -128,11 +130,16 @@ void ROIPassthrough::inputCloud(typename pcl::PointCloud<PointT>::ConstPtr cloud
     std::shared_ptr<std::vector<RoiMessage>> out_rois = std::make_shared<std::vector<RoiMessage>>();
     for (const RoiMessage& msg : *rois_msg)
     {
-        out_rois->push_back(msg);
-        if (!check_filter<PointT>(msg, cloud, distance_, min_point_count_, static_cast<Method>(method_)))
-        {
-            out_rois->back().value.setClassification(2);
-            out_rois->back().value.setColor(cv::Scalar(255, 255, 0));
+        bool valid = check_filter<PointT>(msg, cloud, distance_, min_point_count_, static_cast<Method>(method_));
+        if(!remove_) {
+            out_rois->push_back(msg);
+            if(!valid) {
+                out_rois->back().value.setClassification(2);
+                out_rois->back().value.setColor(cv::Scalar(255, 255, 0));
+            }
+        } else {
+            if(valid)
+                out_rois->push_back(msg);
         }
     }
 
