@@ -1,6 +1,7 @@
 #pragma once
 
 #include <csapex/model/node.h>
+#include <set>
 
 namespace csapex
 {

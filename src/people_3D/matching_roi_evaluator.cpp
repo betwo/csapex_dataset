@@ -178,7 +178,7 @@ void MatchingROIEvaluator::process()
     std::generate_n(std::back_inserter(used_ground_truth), rois_ground_truth.size(), []() { return false; });
     // check ground truth -> predictions
     // -> true positive, false negative
-    for (int i = 0; i < rois_ground_truth.size(); ++i)
+    for (std::size_t i = 0; i < rois_ground_truth.size(); ++i)
     {
         const RoiMessage& roi_ground_truth = rois_ground_truth[i];
 
@@ -223,7 +223,7 @@ void MatchingROIEvaluator::process()
 
     // check prediction -> ground truth
     // -> false positive, true negative
-    for (int i = 0; i < rois_prediction.size(); ++i)
+    for (std::size_t i = 0; i < rois_prediction.size(); ++i)
     {
         if (used_predictions[i])
             continue;
