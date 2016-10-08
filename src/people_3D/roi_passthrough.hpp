@@ -26,5 +26,6 @@ private:
     std::pair<double, double> distance_;
     int min_point_count_;
     int method_;
+    bool remove_;
 };
 }
