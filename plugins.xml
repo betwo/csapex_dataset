@@ -19,16 +19,4 @@
       <description>Import the INRIA dataset.</description>
       <tags>dataset, people</tags>
     </class>
-    <class type="csapex::ROIPassthrough" base_class_type="csapex::Node">
-      <description>Passthrough filter for ROIs</description>
-      <tags>dataset, people</tags>
-    </class>
-    <class type="csapex::ROILabelFilter" base_class_type="csapex::Node">
-      <description>Filters ROIs based on classification label</description>
-      <tags>dataset, people</tags>
-    </class>
-    <class type="csapex::MatchingROIEvaluator" base_class_type="csapex::Node">
-      <description>Evaluates binary ROIs classification by matching them by overlap.</description>
-      <tags>dataset, people</tags>
-    </class>
 </library>
