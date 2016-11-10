@@ -54,12 +54,12 @@ file(GLOB_RECURSE sources
     src/*.hpp
 )
 
-add_executable(labeling_tool
+add_executable(csapex_dataset_labeling_tool
     ${sources}
     ${ui_sources}
 )
 
-target_link_libraries(labeling_tool
+target_link_libraries(csapex_dataset_labeling_tool
     ${OpenCV_LIBRARIES}
     ${Boost_LIBRARIES}
     ${catkin_LIBRARIES}
@@ -72,7 +72,7 @@ target_link_libraries(labeling_tool
 ## Install ##
 #############
 
-install(TARGETS labeling_tool
+install(TARGETS csapex_dataset_labeling_tool
         RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
 
 #############
