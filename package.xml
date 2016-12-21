@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <package>
   <name>csapex_dataset</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>The csapex_dataset enables the possibility to load different datasets.</description>
 
   <maintainer email="philipp.kuhlmann@student.uni-tuebingen.de">Philipp Kuhlmann</maintainer>
+  <maintainer email="richard.hanten@uni-tuebingen.de">Richard Hanten</maintainer>
 
   <author email="philipp.kuhlmann@student.uni-tuebingen.de">Philipp Kuhlmann</author>
   <author email="richard.hanten@uni-tuebingen.de">Richard Hanten</author>
