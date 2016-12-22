@@ -24,7 +24,7 @@ before_script:
   - ln -s $CI_PROJECT_DIR src/$CI_PROJECT_NAME
   - cd src
   - git clone gitlab@gitlab.cs.uni-tuebingen.de:csapex/csapex csapex
-  - git clone gitlab@gitlab.cs.uni-tuebingen.de:csapex/core-plugins.git csapex_core_plugins
+  - git clone gitlab@gitlab.cs.uni-tuebingen.de:csapex/core-plugins
   - git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_vision
   - git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_laser_processing
   - git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_kdtree
