@@ -23,11 +23,17 @@ before_script:
   - cd /build/ws
   - ln -s $CI_PROJECT_DIR src/$CI_PROJECT_NAME
   - cd src
-  - git clone gitlab@gitlab.cs.uni-tuebingen.de:csapex/csapex csapex
-  - git clone gitlab@gitlab.cs.uni-tuebingen.de:csapex/core-plugins
-  - git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_vision
-  - git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_laser_processing
-  - git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_kdtree
+  -   git clone gitlab@gitlab.cs.uni-tuebingen.de:csapex/csapex csapex
+  -   cd csapex
+  -     git checkout $CI_BUILD_REF_NAME || true # select same branch name, if it exists. Defaults to master
+  -   cd ..
+  -   git clone gitlab@gitlab.cs.uni-tuebingen.de:csapex/core-plugins
+  -   cd core-plugins
+  -     git checkout $CI_BUILD_REF_NAME || true # select same branch name, if it exists. Defaults to master
+  -   cd ..
+  -   git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_vision
+  -   git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_laser_processing
+  -   git clone gitlab@gitlab.cs.uni-tuebingen.de:libs/cslibs_kdtree
   - cd ..
 
 
