@@ -50,6 +50,8 @@ PeopleDatasetImporterLegacy::PeopleDatasetImporterLegacy() :
 
 void PeopleDatasetImporterLegacy::setup(csapex::NodeModifier &node_modifier)
 {
+    TickableNode::setup(node_modifier);
+
     out_pointcloud_  = node_modifier.addOutput<PointCloudMessage>("Pointcloud");
     out_depth_image_ = node_modifier.addOutput<CvMatMessage>("Depth Image");
     out_bgr_image_   = node_modifier.addOutput<CvMatMessage>("BGR Image");

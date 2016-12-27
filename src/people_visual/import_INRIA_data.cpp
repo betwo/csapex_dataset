@@ -22,6 +22,8 @@ CSAPEX_REGISTER_CLASS(csapex::dataset::people::ImportINRIAData, csapex::Node)
 
 void ImportINRIAData::setup(NodeModifier &node_modifier)
 {
+    TickableNode::setup(node_modifier);
+
     out_image_ = node_modifier.addOutput<CvMatMessage>("Image");
     out_rois_ = node_modifier.addOutput<GenericVectorMessage, RoiMessage>("ROIs");
 
