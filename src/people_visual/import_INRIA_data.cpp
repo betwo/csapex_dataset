@@ -22,8 +22,6 @@ CSAPEX_REGISTER_CLASS(csapex::dataset::people::ImportINRIAData, csapex::Node)
 
 void ImportINRIAData::setup(NodeModifier &node_modifier)
 {
-    TickableNode::setup(node_modifier);
-
     out_image_ = node_modifier.addOutput<CvMatMessage>("Image");
     out_rois_ = node_modifier.addOutput<GenericVectorMessage, RoiMessage>("ROIs");
 
@@ -63,33 +61,20 @@ void ImportINRIAData::setupParameters(Parameterizable &parameters)
     std::function<bool()> show_index =
             [this]() {return samples_.size() > 0;};
     parameters.addConditionalParameter(param_play_index_, show_index);
-    parameters.addConditionalParameter(param::ParameterFactory::declareRange("/play/rate", 0.0, 256.0, 5.0, 0.1),
-                                       show_index,
-                                       rate_);
 
+}
+
+bool ImportINRIAData::canProcess() const
+{
+    return play_;
 }
 
 void ImportINRIAData::process()
 {
-
-}
-
-void ImportINRIAData::tick()
-{
-
-    if(!play_)
-        return;
-
     if(samples_.empty() && path_ != "")
         import();
 
     play_index_ = param_play_index_->as<int>();
-
-    if(rate_ == 0.0) {
-        setTickFrequency(-1.0);
-    } else {
-        setTickFrequency(rate_);
-    }
 
     if(play_index_ < samples_.size()) {
         Instance::Set::iterator it = samples_.begin();
@@ -174,6 +159,7 @@ void ImportINRIAData::play()
     play_ = param_play_->as<bool>();
     if(play_) {
         play_started_->trigger();
+        yield();
     } else {
         play_stopped_->trigger();
     }
@@ -185,6 +171,7 @@ void ImportINRIAData::slotPlay()
         play_ = true;
         param_play_->set(true);
         play_started_->trigger();
+        yield();
     }
 }
 

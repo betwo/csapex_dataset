@@ -2,7 +2,7 @@
 
 #include "dataset_common.hpp"
 
-#include <csapex/model/tickable_node.h>
+#include <csapex/model/node.h>
 
 /// SYSTEM
 #include <opencv2/opencv.hpp>
@@ -14,7 +14,7 @@ namespace csapex
 namespace dataset
 {
 
-class PeopleDatasetImporter : public csapex::TickableNode
+class PeopleDatasetImporter : public csapex::Node
 {
     enum Ratio {RATIO_1_TO_2, RATIO_1_TO_1, RATIO_FREE};
 
@@ -23,8 +23,8 @@ public:
 
     virtual void setup(csapex::NodeModifier &node_modifier) override;
     virtual void setupParameters(csapex::Parameterizable &parameters) override;
+    virtual bool canProcess() const override;
     virtual void process() override;
-    virtual void tick() override;
 
 private:
     /// I/O
@@ -51,7 +51,6 @@ private:
     csapex::param::Parameter::Ptr param_sample_exclusive_;
     csapex::param::Parameter::Ptr param_sample_sequential_;
     csapex::param::Parameter::Ptr param_play_immediate_;
-    csapex::param::Parameter::Ptr param_play_rate_;
     csapex::param::Parameter::Ptr param_play_frame_;
     csapex::param::Parameter::Ptr progress_;
     /// STATE
@@ -66,7 +65,6 @@ private:
     void import();
     void start_play();
     void stop_play();
-    void update_frequency();
 };
 
 }

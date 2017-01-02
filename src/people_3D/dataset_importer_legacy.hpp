@@ -1,7 +1,7 @@
 #pragma once
 
 /// PROJECT
-#include <csapex/model/tickable_node.h>
+#include <csapex/model/node.h>
 #include <csapex/model/connector_type.h>
 #include <csapex_opencv/roi_message.h>
 
@@ -18,7 +18,7 @@ namespace csapex
 namespace dataset
 {
 
-class PeopleDatasetImporterLegacy : public csapex::TickableNode
+class PeopleDatasetImporterLegacy : public Node
 {
     struct DataSetEntry
     {
@@ -44,8 +44,8 @@ public:
 
     virtual void setup(csapex::NodeModifier &node_modifier) override;
     virtual void setupParameters(Parameterizable &parameters) override;
+    virtual bool canProcess() const override;
     virtual void process() override;
-    virtual void tick() override;
 
 private:
     /// I/O
@@ -90,7 +90,6 @@ private:
     void checkDirectoryStructure() const;
     void import();
     void resetPlaySet();
-    void updateHz();
     void createEntry(const std::string &id,
                      const boost::filesystem::path &rois_path,
                      DataSetEntry &entry);
