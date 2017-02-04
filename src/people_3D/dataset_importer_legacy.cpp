@@ -257,7 +257,7 @@ void PeopleDatasetImporterLegacy::process()
     } else {
         play_->set(false);
         lets_play_ = false;
-        finished_->trigger();
+        msg::trigger(finished_);
 
         auto end = connection_types::makeEmpty<EndOfSequenceMessage>();
 

@@ -107,7 +107,7 @@ void ImportINRIAData::process()
     } else {
         play_ = false;
         param_play_->set(play_);
-        play_finished_->trigger();
+        msg::trigger(play_finished_);
     }
 }
 
@@ -158,10 +158,10 @@ void ImportINRIAData::play()
 {
     play_ = param_play_->as<bool>();
     if(play_) {
-        play_started_->trigger();
+        msg::trigger(play_started_);
         yield();
     } else {
-        play_stopped_->trigger();
+        msg::trigger(play_stopped_);
     }
 }
 
@@ -170,7 +170,7 @@ void ImportINRIAData::slotPlay()
     if(!play_) {
         play_ = true;
         param_play_->set(true);
-        play_started_->trigger();
+        msg::trigger(play_started_);
         yield();
     }
 }
@@ -180,7 +180,7 @@ void ImportINRIAData::slotStop()
     if(play_) {
         play_ = false;
         param_play_->set(false);
-        play_stopped_->trigger();
+        msg::trigger(play_stopped_);
     }
 }
 

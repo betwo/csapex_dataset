@@ -489,5 +489,5 @@ void PeopleDatasetImporter::start_play()
 void PeopleDatasetImporter::stop_play()
 {
     playing_ = false;
-    tri_finished_->trigger();
+    msg::trigger(tri_finished_);
 }
