@@ -46,7 +46,7 @@ void PeopleDatasetStats::setup(NodeModifier& node_modifier)
     out_stats_ = node_modifier.addOutput<std::string>("stats");
 }
 
-void PeopleDatasetStats::tick()
+void PeopleDatasetStats::process()
 {
     msg::publish(out_stats_, stats_);
 }

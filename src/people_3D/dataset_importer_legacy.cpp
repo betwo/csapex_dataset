@@ -153,15 +153,6 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
                  hold_);
     addConditionalParameter(prep_progress_, playing);
     addConditionalParameter(play_progress_, playing);
-
-
-    addParameter(param::ParameterFactory::declareRange("hz", 0, 512, 2, 1),
-                 std::bind(&PeopleDatasetImporterLegacy::updateHz, this));
-}
-
-void PeopleDatasetImporterLegacy::process()
-{
-
 }
 
 namespace
@@ -217,9 +208,14 @@ private:
 
 }
 
-void PeopleDatasetImporterLegacy::tick()
+bool PeopleDatasetImporterLegacy::canProcess() const
 {
-    if(play_pos_ < play_set_.size() && lets_play_) {
+    return lets_play_;
+}
+
+void PeopleDatasetImporterLegacy::process()
+{
+    if(play_pos_ < play_set_.size()) {
 
         DataSetEntry &entry = play_set_.at(play_pos_);
 
@@ -258,10 +254,10 @@ void PeopleDatasetImporterLegacy::tick()
         auto *prog = (csapex::param::OutputProgressParameter*) play_progress_.get();
         prog->setProgress(play_pos_ + 1, play_set_.size());
 
-    } else if(lets_play_) {
+    } else {
         play_->set(false);
         lets_play_ = false;
-        finished_->trigger();
+        msg::trigger(finished_);
 
         auto end = connection_types::makeEmpty<EndOfSequenceMessage>();
 
@@ -321,15 +317,6 @@ void PeopleDatasetImporterLegacy::resetPlaySet()
     play_set_.clear();
     play_->set(false);
     lets_play_ = false;
-}
-
-void PeopleDatasetImporterLegacy::updateHz()
-{
-    int hz = readParameter<int>("hz");
-    if(hz == 0)
-        setTickFrequency(-1);
-    else
-        setTickFrequency(hz);
 }
 
 void PeopleDatasetImporterLegacy::createEntry(const std::string &id,
@@ -452,6 +439,9 @@ void PeopleDatasetImporterLegacy::play()
         std::cout << "End Play" << std::endl;
 
     lets_play_ = lets_play;
+    if(lets_play) {
+        yield();
+    }
 }
 
 void PeopleDatasetImporterLegacy::prepareThePlaySet()

@@ -3,7 +3,7 @@
 
 #include "import_inria.hpp"
 
-#include <csapex/model/tickable_node.h>
+#include <csapex/model/node.h>
 #include <csapex/param/range_parameter.h>
 #include <csapex/param/value_parameter.h>
 
@@ -17,13 +17,14 @@ namespace dataset
 namespace people
 {
 
-class ImportINRIAData : public csapex::TickableNode
+class ImportINRIAData : public Node
 {
 public:
     void setup(NodeModifier &node_modifier) override;
     void setupParameters(Parameterizable &parameters) override;
+
+    bool canProcess() const override;
     void process() override;
-    void tick() override;
 
 private:
 
@@ -40,7 +41,6 @@ private:
     csapex::Slot   *play_stop_;
     csapex::Slot   *play_reset_;
 
-    double                     rate_;
     int                        neg_rng_seed_;
     bool                       neg_do_sample_;
     bool                       play_;

@@ -61,33 +61,20 @@ void ImportINRIAData::setupParameters(Parameterizable &parameters)
     std::function<bool()> show_index =
             [this]() {return samples_.size() > 0;};
     parameters.addConditionalParameter(param_play_index_, show_index);
-    parameters.addConditionalParameter(param::ParameterFactory::declareRange("/play/rate", 0.0, 256.0, 5.0, 0.1),
-                                       show_index,
-                                       rate_);
 
+}
+
+bool ImportINRIAData::canProcess() const
+{
+    return play_;
 }
 
 void ImportINRIAData::process()
 {
-
-}
-
-void ImportINRIAData::tick()
-{
-
-    if(!play_)
-        return;
-
     if(samples_.empty() && path_ != "")
         import();
 
     play_index_ = param_play_index_->as<int>();
-
-    if(rate_ == 0.0) {
-        setTickFrequency(-1.0);
-    } else {
-        setTickFrequency(rate_);
-    }
 
     if(play_index_ < samples_.size()) {
         Instance::Set::iterator it = samples_.begin();
@@ -120,7 +107,7 @@ void ImportINRIAData::tick()
     } else {
         play_ = false;
         param_play_->set(play_);
-        play_finished_->trigger();
+        msg::trigger(play_finished_);
     }
 }
 
@@ -171,9 +158,10 @@ void ImportINRIAData::play()
 {
     play_ = param_play_->as<bool>();
     if(play_) {
-        play_started_->trigger();
+        msg::trigger(play_started_);
+        yield();
     } else {
-        play_stopped_->trigger();
+        msg::trigger(play_stopped_);
     }
 }
 
@@ -182,7 +170,8 @@ void ImportINRIAData::slotPlay()
     if(!play_) {
         play_ = true;
         param_play_->set(true);
-        play_started_->trigger();
+        msg::trigger(play_started_);
+        yield();
     }
 }
 
@@ -191,7 +180,7 @@ void ImportINRIAData::slotStop()
     if(play_) {
         play_ = false;
         param_play_->set(false);
-        play_stopped_->trigger();
+        msg::trigger(play_stopped_);
     }
 }
 

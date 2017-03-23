@@ -101,9 +101,6 @@ void PeopleDatasetImporter::setupParameters(csapex::Parameterizable& parameters)
     param_play_immediate_ = param::ParameterFactory::declareBool("play/immediate",
                                          param::ParameterDescription("Immediatly send new entry"),
                                          false);
-    param_play_rate_ = param::ParameterFactory::declareRange("play/rate",
-                                          param::ParameterDescription("Playing framerate"),
-                                          1, 256, 30, 1);
     param_play_frame_ = param::ParameterFactory::declareValue("play/frame",
                                           param::ParameterDescription("TF Frame name"),
                                           std::string("base_link"));
@@ -113,7 +110,6 @@ void PeopleDatasetImporter::setupParameters(csapex::Parameterizable& parameters)
 
     auto cond_playing = [this]() { return playing_; };
     auto cond_not_playing = [this]() { return !playing_; };
-    auto cond_not_immediate = [this]() { return getTickFrequency() >= 0; };
     auto cond_negative = [this]() { return !playing_ && param_sample_negative_count_->as<int>() > 0; };
     auto cond_negative_opts = [this]() { return !playing_ && param_sample_negative_count_->as<int>() > 0 && param_sample_negative_rois_->as<bool>() == false; };
 
@@ -134,23 +130,17 @@ void PeopleDatasetImporter::setupParameters(csapex::Parameterizable& parameters)
     addConditionalParameter(param_sample_exclusive_, cond_negative_opts);
     addConditionalParameter(param_sample_sequential_, cond_not_playing);
     addConditionalParameter(param_sample_random_seed_, cond_not_playing);
-    addParameter(param_play_immediate_, std::bind(&PeopleDatasetImporter::update_frequency, this));
-    addConditionalParameter(param_play_rate_, cond_not_immediate, std::bind(&PeopleDatasetImporter::update_frequency, this));
     addParameter(param_play_frame_);
     addParameter(progress_);
 }
 
-void PeopleDatasetImporter::process()
+bool PeopleDatasetImporter::canProcess() const
 {
-
+    return playing_;
 }
 
-void PeopleDatasetImporter::tick()
+void PeopleDatasetImporter::process()
 {
-    // do nothing if not playing
-    if (!playing_)
-        return;
-
     if (play_index_ < play_entries_.size())
     {
         const std::string& frame = param_play_frame_->as<std::string>();
@@ -493,18 +483,11 @@ void PeopleDatasetImporter::start_play()
 {
     play_index_ = 0;
     playing_ = true;
+    yield();
 }
 
 void PeopleDatasetImporter::stop_play()
 {
     playing_ = false;
-    tri_finished_->trigger();
-}
-
-void PeopleDatasetImporter::update_frequency()
-{
-    if (param_play_immediate_->as<bool>())
-        setTickFrequency(-1.0);
-    else
-        setTickFrequency(param_play_rate_->as<int>());
+    msg::trigger(tri_finished_);
 }
