@@ -16,7 +16,7 @@
 #include <csapex/param/interval_parameter.h>
 #include <csapex/param/output_progress_parameter.h>
 
-#include <csapex_point_cloud/point_cloud_message.h>
+#include <csapex_point_cloud/msg/point_cloud_message.h>
 #include <csapex_opencv/cv_mat_message.h>
 #include <csapex_opencv/roi_message.h>
 #include <csapex/msg/generic_vector_message.hpp>
