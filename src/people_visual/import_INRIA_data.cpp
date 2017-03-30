@@ -80,7 +80,7 @@ void ImportINRIAData::process()
         Instance::Set::iterator it = samples_.begin();
         std::advance(it, play_index_);
 
-        CvMatMessage::Ptr                        img_msg(new CvMatMessage(enc::bgr, 0));
+        CvMatMessage::Ptr                        img_msg(new CvMatMessage(enc::bgr, "camera", 0));
         std::shared_ptr<std::vector<RoiMessage>> rois_msg(new std::vector<RoiMessage>());
         img_msg->value = cv::imread(it->second.path);
 
