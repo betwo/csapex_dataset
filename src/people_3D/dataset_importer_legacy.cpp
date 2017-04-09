@@ -219,8 +219,8 @@ void PeopleDatasetImporterLegacy::process()
 
         DataSetEntry &entry = play_set_.at(play_pos_);
 
-        CvMatMessage::Ptr      depth_msg(new CvMatMessage(enc::depth, "unknown", entry.ts));
-        CvMatMessage::Ptr      img_msg(new CvMatMessage(enc::bgr, "unknown", entry.ts));
+        CvMatMessage::Ptr      depth_msg(new CvMatMessage(enc::depth, "camera_depth_optical_frame", entry.ts));
+        CvMatMessage::Ptr      img_msg(new CvMatMessage(enc::bgr, "camera_depth_optical_frame", entry.ts));
         PointCloudMessage::Ptr pcl_msg(new PointCloudMessage("camera_depth_optical_frame", entry.ts));
         std::shared_ptr<std::vector<RoiMessage>> roi_msg(new std::vector<RoiMessage>);
 
