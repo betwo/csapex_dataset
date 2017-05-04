@@ -18,7 +18,7 @@
 #include <csapex/profiling/timer.h>
 #include <csapex/profiling/interlude.hpp>
 
-#include <csapex_point_cloud/point_cloud_message.h>
+#include <csapex_point_cloud/msg/point_cloud_message.h>
 #include <csapex_opencv/cv_mat_message.h>
 #include <csapex_opencv/roi_message.h>
 #include <csapex/msg/generic_vector_message.hpp>
@@ -147,8 +147,8 @@ void PeopleDatasetImporter::process()
         const MetaEntry& entry = play_entries_.at(play_index_);
 
         {
-            CvMatMessage::Ptr depth_msg = std::make_shared<CvMatMessage>(enc::depth, entry.timestamp);
-            CvMatMessage::Ptr visual_msg = std::make_shared<CvMatMessage>(enc::bgr, entry.timestamp);
+            CvMatMessage::Ptr depth_msg = std::make_shared<CvMatMessage>(enc::depth, "camera_depth_optical_frame", entry.timestamp);
+            CvMatMessage::Ptr visual_msg = std::make_shared<CvMatMessage>(enc::bgr, "camera_depth_optical_frame", entry.timestamp);
             PointCloudMessage::Ptr pcl_msg = std::make_shared<PointCloudMessage>(frame, entry.timestamp);
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>());
             std::shared_ptr<std::vector<RoiMessage>> roi_msg = std::make_shared<std::vector<RoiMessage>>();

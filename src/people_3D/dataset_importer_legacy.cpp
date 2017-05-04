@@ -16,7 +16,7 @@
 #include <csapex/param/interval_parameter.h>
 #include <csapex/param/output_progress_parameter.h>
 
-#include <csapex_point_cloud/point_cloud_message.h>
+#include <csapex_point_cloud/msg/point_cloud_message.h>
 #include <csapex_opencv/cv_mat_message.h>
 #include <csapex_opencv/roi_message.h>
 #include <csapex/msg/generic_vector_message.hpp>
@@ -219,8 +219,8 @@ void PeopleDatasetImporterLegacy::process()
 
         DataSetEntry &entry = play_set_.at(play_pos_);
 
-        CvMatMessage::Ptr      depth_msg(new CvMatMessage(enc::depth, entry.ts));
-        CvMatMessage::Ptr      img_msg(new CvMatMessage(enc::bgr, entry.ts));
+        CvMatMessage::Ptr      depth_msg(new CvMatMessage(enc::depth, "camera_depth_optical_frame", entry.ts));
+        CvMatMessage::Ptr      img_msg(new CvMatMessage(enc::bgr, "camera_depth_optical_frame", entry.ts));
         PointCloudMessage::Ptr pcl_msg(new PointCloudMessage("camera_depth_optical_frame", entry.ts));
         std::shared_ptr<std::vector<RoiMessage>> roi_msg(new std::vector<RoiMessage>);
 
