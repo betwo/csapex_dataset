@@ -16,6 +16,7 @@ public:
 
 private:
     Input* in_timestamp_;
+    Input* in_size_;
     Input* in_rois_;
 
     std::string config_roi_dir_;

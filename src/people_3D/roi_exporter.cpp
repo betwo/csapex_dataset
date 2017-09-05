@@ -7,6 +7,7 @@
 #include <csapex/msg/generic_vector_message.hpp>
 #include <csapex/param/parameter_factory.h>
 #include <csapex/utility/register_apex_plugin.h>
+#include <csapex_opencv/cv_mat_message.h>
 
 #include <fstream>
 #include <yaml-cpp/yaml.h>
@@ -25,6 +26,7 @@ namespace fs = boost::filesystem;
 void ROIExporter::setup(csapex::NodeModifier& node_modifier)
 {
     in_timestamp_ = node_modifier.addInput<AnyMessage>("Timestamp");
+    in_size_      = node_modifier.addInput<CvMatMessage>("Image");
     in_rois_      = node_modifier.addInput<GenericVectorMessage, RoiMessage>("ROIs");
 }
 
@@ -46,12 +48,13 @@ void ROIExporter::process()
             timestamp = casted->stamp_micro_seconds;
     }
 
+    auto image_msg = msg::getMessage<CvMatMessage>(in_size_);
     std::shared_ptr<std::vector<RoiMessage> const> rois_msg = msg::getMessage<GenericVectorMessage, RoiMessage>(in_rois_);
 
     YAML::Emitter yaml;
     yaml << YAML::BeginMap;
-    yaml << "img_d_w" << 640;
-    yaml << "img_d_h" << 480;
+    yaml << "img_d_w" << image_msg->value.cols;
+    yaml << "img_d_h" << image_msg->value.rows;
     yaml << "rois" << YAML::BeginSeq;
     for (const RoiMessage& roi : *rois_msg)
     {
@@ -73,10 +76,13 @@ void ROIExporter::process()
     yaml << "ts" << timestamp;
     yaml << YAML::EndMap;
 
-    std::ostringstream filename;
-    filename << config_roi_dir_ << "/" << timestamp << ".yaml";
+    std::string filename = std::to_string(timestamp) + ".yaml";
 
-    fs::path roi_file(filename.str());
+    fs::path roi_dir(config_roi_dir_);
+    if (!fs::exists(roi_dir))
+        fs::create_directories(roi_dir);
+
+    fs::path roi_file = roi_dir / filename;
     if (fs::exists(roi_file) && fs::is_symlink(roi_file))
         fs::remove(roi_file);
 
