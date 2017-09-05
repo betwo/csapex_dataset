@@ -103,9 +103,9 @@ void ROIImporter::loadRois(const std::string& roi_dir_str)
                 continue;
 
             int vis = node["vis"].as<int>();
-            if (vis != HUMAN
-                && vis != HUMAN_PART)
-                continue;
+//            if (vis != HUMAN
+//                && vis != HUMAN_PART)
+//                continue;
 
             RoiMessage roi;
             roi.value.setRect(rect);

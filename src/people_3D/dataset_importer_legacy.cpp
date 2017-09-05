@@ -364,8 +364,8 @@ void PeopleDatasetImporterLegacy::createEntry(const std::string &id,
         if(it->IsMap()) {
             int vis = (*it)["vis"].as<int>();
 
-            if(vis != HUMAN && vis != HUMAN_PART)
-                continue;
+//            if(vis != HUMAN && vis != HUMAN_PART)
+//                continue;
 
             cv::Rect rect;
             rect.x       = (*it)["x_d"   ].as<int>();
