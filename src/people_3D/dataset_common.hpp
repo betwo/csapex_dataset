@@ -6,6 +6,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <boost/filesystem.hpp>
+#include <boost/variant.hpp>
 
 namespace csapex
 {
@@ -69,10 +70,11 @@ inline bool operator<(const MetaEntry &a,
 
 struct Entry
 {
-    MetaEntry                       meta;
-    cv::Mat                         visual;
-    cv::Mat                         depth;
-    pcl::PointCloud<pcl::PointXYZI> pointcloud;
+    using PCLType = boost::variant<pcl::PointCloud<pcl::PointXYZI>, pcl::PointCloud<pcl::PointXYZRGB>>;
+    MetaEntry meta;
+    cv::Mat   visual;
+    cv::Mat   depth;
+    PCLType   pointcloud;
 };
 
 void save_fill_meta(Entry& entry, const std::string& directory);
