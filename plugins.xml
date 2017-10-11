@@ -27,4 +27,9 @@
       <description>Import the INRIA dataset.</description>
       <tags>dataset, people</tags>
     </class>
+
+    <class type="csapex::dataset::sand::SandDatasetImporter" base_class_type="csapex::Node">
+        <description>Importer for Sand datasets.</description>
+        <tags>dataset</tags>
+    </class>
 </library>
