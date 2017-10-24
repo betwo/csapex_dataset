@@ -9,13 +9,21 @@ namespace csapex { namespace dataset { namespace sand {
 class Annotation
 {
 public:
+    enum Class
+    {
+        CLASS_BACKGROUND = -1,
+        CLASS_UNKNOWN = 0,
+        CLASS_PERSON = 1,
+        CLASS_PARTIAL_PERSON = 2,
+    };
+
     struct Region
     {
         int x;
         int y;
         int width;
         int height;
-        int clazz;
+        Class clazz;
     };
 public:
     explicit Annotation(boost::filesystem::path path);

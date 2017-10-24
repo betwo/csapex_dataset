@@ -35,11 +35,15 @@ private:
     Output* output_rois_;
     Event*  event_finished_;
 
+    int param_load_classes_;
     bool param_generate_negative_;
     int param_generate_seed_;
+    double param_negative_ratio_;
     std::pair<int, int> param_negative_width_;
     std::pair<int, int> param_negative_height_;
     int param_negative_class_;
+    bool param_no_overlap_;
+    int param_check_overlap_classes_;
 };
 
 }}}

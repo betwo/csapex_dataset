@@ -20,6 +20,16 @@ namespace bfs = boost::filesystem;
 
 CSAPEX_REGISTER_CLASS(csapex::dataset::sand::SandDatasetImporter, csapex::Node)
 
+namespace
+{
+int classToBit(Annotation::Class clazz)
+{
+    if (clazz < 0)
+        return 1 << (std::numeric_limits<int>::digits + clazz);
+    else
+        return 1 << static_cast<int>(clazz);
+}
+}
 
 SandDatasetImporter::SandDatasetImporter() :
         playing_(false)
@@ -34,26 +44,51 @@ void SandDatasetImporter::setup(NodeModifier& node_modifier)
 
 void SandDatasetImporter::setupParameters(Parameterizable& parameters)
 {
-    auto index_file    = param::ParameterFactory::declareFileInputPath("index file", "");
+    auto index_file    = param::ParameterFactory::declareFileInputPath("index file", "").build();
+
+    auto reload        = param::ParameterFactory::declareTrigger("reload");
     auto start_play    = param::ParameterFactory::declareTrigger("start play");
     auto stop_play     = param::ParameterFactory::declareTrigger("stop play");
     auto play_progress = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
+
+    const std::map<std::string, int> CLASS_SET{
+            { "background",       classToBit(Annotation::CLASS_BACKGROUND)},
+            { "unknown",          classToBit(Annotation::CLASS_UNKNOWN)},
+            { "person",           classToBit(Annotation::CLASS_PERSON)},
+            { "person (partial)", classToBit(Annotation::CLASS_PARTIAL_PERSON)}};
+    auto load_classes = param::ParameterFactory::declareParameterBitSet("load classes", CLASS_SET,
+            classToBit(Annotation::CLASS_PERSON));
+
     auto generate_negative = param::ParameterFactory::declareBool("negative samples/generate", false);
     auto generate_seed   = param::ParameterFactory::declareValue("negative samples/random seed", 0);
+    auto negative_ratio  = param::ParameterFactory::declareRange("negative samples/ratio", 0.0, 8.0, 0.0, 0.1);
     auto negative_width  = param::ParameterFactory::declareInterval("negative samples/width", 1, 640, 32, 256, 1);
     auto negative_height = param::ParameterFactory::declareInterval("negative samples/height", 1, 640, 32, 256, 1);
     auto negative_class  = param::ParameterFactory::declareValue("negative samples/class", -1);
+    auto no_overlap      = param::ParameterFactory::declareBool("negative samples/no overlap", true).build();
+    auto check_classes   = param::ParameterFactory::declareParameterBitSet("negative samples/overlap check classes", CLASS_SET,
+            classToBit(Annotation::CLASS_BACKGROUND) | classToBit(Annotation::CLASS_PERSON) | classToBit(Annotation::CLASS_PARTIAL_PERSON));
 
     auto play_only = [this]() { return playing_; };
     auto no_play_only = [this]() { return dataset_ && !playing_; };
     auto generate_negative_only = [this]() { return param_generate_negative_; };
+    auto no_ratio = [this]() { return param_generate_negative_ && param_negative_ratio_ == 0.0; };
+    auto overlap_only = [this]() { return param_generate_negative_ && param_no_overlap_; };
 
     parameters.addParameter(index_file, [this](param::Parameter* param) { import(param->as<std::string>()); });
+    parameters.addConditionalParameter(reload, no_play_only, [this, index_file](param::Parameter* param) { import(index_file->as<std::string>()); });
+
+    parameters.addParameter(load_classes, param_load_classes_);
+
     parameters.addParameter(generate_negative, param_generate_negative_);
     parameters.addConditionalParameter(generate_seed, generate_negative_only, param_generate_seed_);
+    parameters.addConditionalParameter(negative_ratio, generate_negative_only, param_negative_ratio_);
     parameters.addConditionalParameter(negative_width, generate_negative_only, param_negative_width_);
-    parameters.addConditionalParameter(negative_height, generate_negative_only, param_negative_height_);
+    parameters.addConditionalParameter(negative_height, no_ratio, param_negative_height_);
     parameters.addConditionalParameter(negative_class, generate_negative_only, param_negative_class_);
+    parameters.addConditionalParameter(no_overlap, generate_negative_only, param_no_overlap_);
+    parameters.addConditionalParameter(check_classes, overlap_only, param_check_overlap_classes_);
+
     parameters.addConditionalParameter(start_play, no_play_only, [this](param::Parameter*) { if (dataset_) startPlay(); });
     parameters.addConditionalParameter(stop_play, play_only, [this](param::Parameter*) { playing_ = false; });
     parameters.addConditionalParameter(play_progress, play_only);
@@ -133,6 +168,9 @@ void SandDatasetImporter::process()
         const cv::Rect box = cv::Rect(0, 0, annotation.getWidth(), annotation.getHeight());
         for (auto& region : annotation.getRegions())
         {
+            if ((classToBit(region.clazz) & param_load_classes_) == 0)
+                continue;
+
             auto roi = cv::Rect(region.x, region.y, region.width, region.height) & box;
             if (roi.area() == 0)
                 continue;
@@ -208,11 +246,17 @@ void SandDatasetImporter::generateNegativeSamples()
             std::uniform_int_distribution<> width_dist(
                     std::min(param_negative_width_.first, annotation.getWidth()),
                     std::min(param_negative_width_.second, annotation.getWidth()));
-            std::uniform_int_distribution<> height_dist(
-                    std::min(param_negative_height_.first, annotation.getHeight()),
-                    std::min(param_negative_height_.second, annotation.getHeight()));
             roi.width  = width_dist(rng);
-            roi.height = height_dist(rng);
+
+            if (param_negative_ratio_ == 0.0)
+            {
+                std::uniform_int_distribution<> height_dist(
+                        std::min(param_negative_height_.first, annotation.getHeight()),
+                        std::min(param_negative_height_.second, annotation.getHeight()));
+                roi.height = height_dist(rng);
+            }
+            else
+                roi.height = static_cast<int>(roi.width * param_negative_ratio_);
 
             std::uniform_int_distribution<> x_dist(0, annotation.getWidth() - roi.width - 1);
             std::uniform_int_distribution<> y_dist(0, annotation.getHeight() - roi.height - 1);
@@ -220,14 +264,30 @@ void SandDatasetImporter::generateNegativeSamples()
             roi.y = y_dist(rng);
         }
 
+        if (param_no_overlap_)
         {
             const auto& regions = annotation.getRegions();
             if (std::any_of(regions.begin(), regions.end(),
-                    [&roi](const Annotation::Region& region)
+                    [this, &roi](const Annotation::Region& region)
                     {
+                        if ((classToBit(region.clazz) & param_check_overlap_classes_) == 0)
+                            return false;
+
                         return (cv::Rect(region.x, region.y, region.width, region.height) & roi).area() > 0;
                     }))
                 continue;
+
+            auto negative_itr = negative_rois_.find(entry.getId());
+            if (negative_itr != negative_rois_.end())
+                if (std::any_of(negative_itr->second.begin(), negative_itr->second.end(),
+                        [this, &roi](const RoiMessage& msg)
+                        {
+                            if ((classToBit(static_cast<Annotation::Class>(msg.value.classification())) & param_check_overlap_classes_) == 0)
+                                return false;
+
+                            return (msg.value.rect() & roi).area() > 0;
+                        }))
+                    continue;
         }
 
         RoiMessage msg;

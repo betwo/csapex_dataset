@@ -26,7 +26,7 @@ Annotation::Annotation(boost::filesystem::path path) :
         region.y = node["y"].as<int>();
         region.width = node["width"].as<int>();
         region.height = node["height"].as<int>();
-        region.clazz = node["class"].as<int>();
+        region.clazz = static_cast<Class>(node["class"].as<int>());
         regions_.push_back(region);
     }
 }
