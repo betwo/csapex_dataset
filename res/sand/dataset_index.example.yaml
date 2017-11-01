@@ -1,0 +1,13 @@
+name: Example Dataset       # logical dataset name
+roots:                      # root directories
+  pointcloud: pcl/          #   pointcloud root directory
+  annotation: label/        #   annotation root directory
+index:                      # entry list of this dataset
+  - id: 12345               #   id of the entry (must be unique in the dataset)
+    annotation: 12345.yaml  #   path to the annotation file
+    pointcloud: 12345.pcd   #   path to the pointcloud file
+
+
+# all paths can be either relative or absolute
+# - the root directories are relative to this index file
+# - the entry files are relative to their root

@@ -40,6 +40,8 @@ file(GLOB sources
     src/people_3D/*.cpp
     src/people_visual/*.hpp
     src/people_visual/*.cpp
+    src/sand/*.hpp
+    src/sand/*.cpp
 )
 
 add_library(csapex_dataset_node

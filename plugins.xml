@@ -15,8 +15,21 @@
       <description>Imports Datasets for person_detection (legacy version)</description>
       <tags>dataset, people</tags>
     </class>
+    <class type="csapex::dataset::ROIImporter" base_class_type="csapex::Node">
+      <description>Imports ROIs for person_detection</description>
+      <tags>dataset, people</tags>
+    </class>
+    <class type="csapex::dataset::ROIExporter" base_class_type="csapex::Node">
+      <description>Exports ROIs for person_detection</description>
+      <tags>dataset, people</tags>
+    </class>
     <class type="csapex::dataset::people::ImportINRIAData" base_class_type="csapex::Node">
       <description>Import the INRIA dataset.</description>
       <tags>dataset, people</tags>
+    </class>
+
+    <class type="csapex::dataset::sand::SandDatasetImporter" base_class_type="csapex::Node">
+        <description>Importer for Sand datasets.</description>
+        <tags>dataset</tags>
     </class>
 </library>
