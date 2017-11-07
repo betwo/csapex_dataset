@@ -57,3 +57,16 @@ Dataset::Dataset(boost::filesystem::path index_path) :
         entries_.emplace_back(id, pointcloud_path, annotation_path);
     }
 }
+
+const Entry* Dataset::findById(uint64_t id) const
+{
+    auto itr = std::find_if(begin(), end(), [&id](const Entry& entry) { return entry.getId() == id; });
+    if (itr == end())
+        return nullptr;
+    return &(*itr);
+}
+
+void Dataset::add(const Entry& entry)
+{
+    entries_.push_back(entry);
+}

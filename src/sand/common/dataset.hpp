@@ -11,6 +11,7 @@ public:
     using const_iterator = std::vector<Entry>::const_iterator;
 
 public:
+    Dataset() = default;
     explicit Dataset(boost::filesystem::path index_path);
 
     std::size_t size() const { return entries_.size(); }
@@ -21,8 +22,11 @@ public:
 
     const Entry& operator[](std::size_t index) const { return entries_[index]; }
 
+    const Entry* findById(uint64_t id) const;
+    void add(const Entry& entry);
+
 private:
-    const boost::filesystem::path index_path_;
+    boost::filesystem::path index_path_;
     std::vector<Entry> entries_;
 };
 

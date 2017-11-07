@@ -32,4 +32,8 @@
         <description>Importer for Sand datasets.</description>
         <tags>dataset</tags>
     </class>
+    <class type="csapex::dataset::sand::SandDatasetExporterSlim" base_class_type="csapex::Node">
+        <description>Slim exporter for Sand datasets.</description>
+        <tags>dataset</tags>
+    </class>
 </library>

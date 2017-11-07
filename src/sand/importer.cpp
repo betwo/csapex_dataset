@@ -154,7 +154,7 @@ void SandDatasetImporter::process()
     {
         auto& entry = *play_itr_;
 
-        auto pointcloud_msg = std::make_shared<PointCloudMessage>(entry.getFrame(), entry.getTimestamp());
+        auto pointcloud_msg = std::make_shared<PointCloudMessage>(entry.getAnnotation().getFrame(), entry.getAnnotation().getTimestamp());
         auto rois_msg = std::make_shared<std::vector<RoiMessage>>();
 
         // load pointcloud
@@ -176,8 +176,8 @@ void SandDatasetImporter::process()
                 continue;
 
             RoiMessage msg;
-            msg.frame_id = entry.getFrame();
-            msg.stamp_micro_seconds = entry.getTimestamp();
+            msg.frame_id = entry.getAnnotation().getFrame();
+            msg.stamp_micro_seconds = entry.getAnnotation().getTimestamp();
             msg.value.setRect(roi);
             msg.value.setClassification(region.clazz);
             rois_msg->push_back(std::move(msg));
@@ -291,8 +291,8 @@ void SandDatasetImporter::generateNegativeSamples()
         }
 
         RoiMessage msg;
-        msg.frame_id = entry.getFrame();
-        msg.stamp_micro_seconds = entry.getTimestamp();
+        msg.frame_id = entry.getAnnotation().getFrame();
+        msg.stamp_micro_seconds = entry.getAnnotation().getTimestamp();
         msg.value = roi;
         msg.value.setClassification(param_negative_class_);
         negative_rois_[entry.getId()].push_back(std::move(msg));
