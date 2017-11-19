@@ -13,7 +13,7 @@
 #include <yaml-cpp/yaml.h>
 
 
-CSAPEX_REGISTER_CLASS(csapex::dataset::ROIExporter, csapex::Node);
+CSAPEX_REGISTER_CLASS(csapex::dataset::ROIExporter, csapex::Node)
 
 
 using namespace csapex;
