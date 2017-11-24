@@ -50,6 +50,7 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
     auto start_play    = param::ParameterFactory::declareTrigger("start play");
     auto stop_play     = param::ParameterFactory::declareTrigger("stop play");
     auto play_progress = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
+    auto current_frame = param::ParameterFactory::declareOutputText("current frame").build<param::OutputTextParameter>();
 
     const std::map<std::string, int> CLASS_SET{
             { "background",       classToBit(Annotation::CLASS_BACKGROUND)},
@@ -92,8 +93,10 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
     parameters.addConditionalParameter(start_play, no_play_only, [this](param::Parameter*) { if (dataset_) startPlay(); });
     parameters.addConditionalParameter(stop_play, play_only, [this](param::Parameter*) { playing_ = false; });
     parameters.addConditionalParameter(play_progress, play_only);
+    parameters.addConditionalParameter(current_frame, play_only);
 
     play_progress_ = play_progress;
+    current_frame_ = current_frame;
 }
 
 bool SandDatasetImporter::canProcess() const
@@ -194,6 +197,7 @@ void SandDatasetImporter::process()
         msg::publish(output_rois_, rois_msg);
 
         play_progress_->advanceProgress();
+        current_frame_->set("Frame ID: " + std::to_string(entry.getId()));
         ++play_itr_;
     }
     else
