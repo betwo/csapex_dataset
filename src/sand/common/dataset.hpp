@@ -24,6 +24,7 @@ public:
 
     const Entry* findById(uint64_t id) const;
     void add(const Entry& entry);
+    void save(const boost::filesystem::path& index_path);
 
 private:
     boost::filesystem::path index_path_;

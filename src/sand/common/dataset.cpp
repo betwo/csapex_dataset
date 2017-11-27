@@ -1,4 +1,5 @@
 #include "dataset.hpp"
+#include <fstream>
 #include <yaml-cpp/yaml.h>
 #include <boost/filesystem/operations.hpp>
 
@@ -14,8 +15,8 @@ Dataset::Dataset(boost::filesystem::path index_path) :
 
     bfs::path pointcloud_root_path;
     bfs::path annotation_root_path;
+    if (YAML::Node path_roots = root["roots"])
     {
-        YAML::Node path_roots = root["roots"];
         if (!path_roots.IsMap())
             throw std::runtime_error("Invalid dataset index file (missing path roots): " + index_path_.string());
 
@@ -69,4 +70,25 @@ const Entry* Dataset::findById(uint64_t id) const
 void Dataset::add(const Entry& entry)
 {
     entries_.push_back(entry);
+}
+
+void Dataset::save(const boost::filesystem::path& index_path)
+{
+    YAML::Node index;
+    for (const auto& entry : entries_)
+    {
+        YAML::Node node;
+        node["id"] = entry.getId();
+        node["pointcloud"] = entry.getPointCloudPath().string();
+        node["annotation"] = entry.getAnnotationPath().string();
+        index.push_back(node);
+    }
+
+    YAML::Node root;
+    root["index"] = index;
+
+    std::ofstream ofs(index_path.string());
+    ofs << root;
+
+    index_path_ = index_path;
 }

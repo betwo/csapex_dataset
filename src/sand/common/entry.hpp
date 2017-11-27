@@ -18,6 +18,7 @@ public:
     uint64_t getId() const { return id_; }
 
     const Annotation& getAnnotation() const;
+    const boost::filesystem::path& getAnnotationPath() const { return annotation_path_; }
 
     template<typename PointT>
     typename pcl::PointCloud<PointT>::ConstPtr getPointcloud() const;

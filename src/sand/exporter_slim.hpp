@@ -26,6 +26,8 @@ private:
     std::unique_ptr<Dataset> reference_dataset_;
     std::unique_ptr<Dataset> dataset_;
     boost::filesystem::path annotation_dir_;
+    boost::filesystem::path index_file_;
+    bool save_empty_rois_;
 
     Input* in_pointcloud_;
     Input* in_rois_;

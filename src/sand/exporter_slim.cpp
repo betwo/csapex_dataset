@@ -32,6 +32,7 @@ void SandDatasetExporterSlim::setupParameters(Parameterizable& parameters)
     auto ref_index_file = param::ParameterFactory::declareFileInputPath("reference index file", "").build();
     auto index_file     = param::ParameterFactory::declareFileOutputPath("index file", "").build();
     auto annotation_dir = param::ParameterFactory::declareDirectoryOutputPath("annoation dir", "").build();
+    auto save_empty_rois = param::ParameterFactory::declareBool("save empty rois", false);
     auto save = param::ParameterFactory::declareTrigger("save");
 
     std::function<void(param::Parameter*)> createDataset = [this, ref_index_file, index_file, annotation_dir](param::Parameter* /*param*/)
@@ -43,6 +44,7 @@ void SandDatasetExporterSlim::setupParameters(Parameterizable& parameters)
     parameters.addParameter(ref_index_file, createDataset);
     parameters.addParameter(index_file, createDataset);
     parameters.addParameter(annotation_dir, createDataset);
+    parameters.addParameter(save_empty_rois, save_empty_rois_);
     parameters.addParameter(save, [this](param::Parameter*) { saveDataset(); });
 }
 
@@ -65,17 +67,23 @@ void SandDatasetExporterSlim::process()
     {
         auto& regions = annotation.getRegions();
         regions.clear();
-        for (const auto& roi_msg : *rois_msg)
+        if (rois_msg)
         {
-            const auto& roi = roi_msg.value;
-            Annotation::Region region;
-            region.x      = roi.x();
-            region.y      = roi.y();
-            region.width  = roi.w();
-            region.height = roi.h();
-            region.clazz  = static_cast<Annotation::Class>(roi.classification());
-            regions.push_back(region);
+            for (const auto& roi_msg : *rois_msg)
+            {
+                const auto& roi = roi_msg.value;
+                Annotation::Region region;
+                region.x      = roi.x();
+                region.y      = roi.y();
+                region.width  = roi.w();
+                region.height = roi.h();
+                region.clazz  = static_cast<Annotation::Class>(roi.classification());
+                regions.push_back(region);
+            }
         }
+
+        if (regions.empty() && !save_empty_rois_)
+            return;
     }
 
     bfs::path annotation_file = annotation_dir_ / (std::to_string(id) + ".yaml");
@@ -90,11 +98,12 @@ void SandDatasetExporterSlim::createDataset(boost::filesystem::path reference_in
 {
     reference_dataset_.reset(new Dataset(reference_index_file));
     dataset_.reset(new Dataset());
+    index_file_ = index_file;
 }
 
 void SandDatasetExporterSlim::saveDataset()
 {
-//    if (dataset_)
-//        dataset_->save();
+    if (dataset_)
+        dataset_->save(index_file_);
 }
 
