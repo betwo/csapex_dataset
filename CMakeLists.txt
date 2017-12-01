@@ -35,7 +35,7 @@ include_directories(
     ${PCL_INCLUDE_DIRS}
 )
 
-file(GLOB sources
+file(GLOB_RECURSE sources
     src/people_3D/*.hpp
     src/people_3D/*.cpp
     src/people_visual/*.hpp
