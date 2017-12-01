@@ -35,11 +35,13 @@ include_directories(
     ${PCL_INCLUDE_DIRS}
 )
 
-file(GLOB sources
+file(GLOB_RECURSE sources
     src/people_3D/*.hpp
     src/people_3D/*.cpp
     src/people_visual/*.hpp
     src/people_visual/*.cpp
+    src/sand/*.hpp
+    src/sand/*.cpp
 )
 
 add_library(csapex_dataset_node
@@ -64,7 +66,7 @@ install(TARGETS csapex_dataset_node
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION})
 
-set(BUILD_DATASET_TOOLS 1)
+set(BUILD_DATASET_TOOLS 0)
 
 if (BUILD_DATASET_TOOLS)
     add_subdirectory(tools)

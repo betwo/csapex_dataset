@@ -1,0 +1,11 @@
+timestamp: 123456789  # unix time in microseconds
+frame: camera         # TF frame of recorded data
+width: 640            # image/pointcloud width
+height: 480           # image/pointcloud height
+regions:              # list of labeled ROIs
+  - x: 10             #   top-left corner x
+    y: 20             #   top-left corner y
+    width: 40         #   ROI width
+    height: 80        #   ROI height
+    class: 0          #   assigned label/class
+# - ...

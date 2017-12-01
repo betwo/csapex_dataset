@@ -25,16 +25,16 @@ std::pair<ImageDisplay::SelectType, std::pair<std::vector<ImageDisplay::ROIWrapp
         return region.contains(point);
     };
 
-    const auto check_edge = [&](const QPointF& a, const QPointF& b)
-    {
-        static const float MARGIN = 10;
-        QRectF region;
-        if (std::abs(a.y() - b.y()) < 1)
-            region = {a.x(), a.y() - MARGIN / 2, a.x() - b.x(), MARGIN};
-        else
-            region = {a.x() - MARGIN / 2, a.y(), MARGIN, a.y() - b.y()};
-        return region.contains(point);
-    };
+//    const auto check_edge = [&](const QPointF& a, const QPointF& b)
+//    {
+//        static const float MARGIN = 10;
+//        QRectF region;
+//        if (std::abs(a.y() - b.y()) < 1)
+//            region = {a.x(), a.y() - MARGIN / 2, a.x() - b.x(), MARGIN};
+//        else
+//            region = {a.x() - MARGIN / 2, a.y(), MARGIN, a.y() - b.y()};
+//        return region.contains(point);
+//    };
 
     for (auto itr = display_rois.rbegin();
          itr != display_rois.rend();

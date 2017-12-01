@@ -7,6 +7,22 @@
 
 namespace fs = boost::filesystem;
 
+namespace
+{
+struct PCLSaver : public boost::static_visitor<void>
+{
+    PCLSaver(const std::string& path) : path_(path) {}
+
+    template<typename PointT>
+    void operator()(const pcl::PointCloud<PointT>& pcl) const
+    {
+        pcl::io::savePCDFileBinaryCompressed(path_, pcl);
+    }
+
+    std::string path_;
+};
+}
+
 void csapex::dataset::people::save_fill_meta(Entry& entry, const std::string& directory)
 {
     entry.meta.path_visual = fs::path(directory) / "visual" / (entry.meta.id + ".ppm");
@@ -35,7 +51,7 @@ void csapex::dataset::people::save(const Entry& entry)
     {
         fs::create_directories(entry.meta.path_pcl.parent_path());
 
-        pcl::io::savePCDFileBinaryCompressed(entry.meta.path_pcl.string(), entry.pointcloud);
+        boost::apply_visitor(PCLSaver(entry.meta.path_pcl.string()), entry.pointcloud);
     }
     {
         fs::create_directories(entry.meta.path_roi.parent_path());

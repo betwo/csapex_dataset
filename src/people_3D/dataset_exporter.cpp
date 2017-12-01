@@ -75,9 +75,19 @@ void PeopleDatasetExporter::process()
         entry.depth = depth_msg->value;
     if (visual_msg)
         entry.visual = visual_msg->value;
-    auto pcl = boost::get<typename pcl::PointCloud<pcl::PointXYZI>::Ptr>(pointcloud_msg->value);
-    if (pcl)
-        entry.pointcloud = *(pcl.get());
+
+    if (pointcloud_msg->value.type() == typeid(pcl::PointCloud<pcl::PointXYZI>::Ptr))
+    {
+        auto pcl = boost::get<typename pcl::PointCloud<pcl::PointXYZI>::Ptr>(pointcloud_msg->value);
+        if (pcl)
+            entry.pointcloud = *(pcl.get());
+    }
+    else
+    {
+        auto pcl = boost::get<typename pcl::PointCloud<pcl::PointXYZRGB>::Ptr>(pointcloud_msg->value);
+        if (pcl)
+            entry.pointcloud = *(pcl.get());
+    }
 
     if (!directory_.empty())
     {
