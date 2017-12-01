@@ -1,8 +1,9 @@
 #pragma once
 
-#include "dataset.hpp"
+#include "common/dataset.hpp"
 #include <csapex/model/node.h>
 #include <csapex/param/output_progress_parameter.h>
+#include <csapex/param/output_text_parameter.h>
 #include <csapex_opencv/roi_message.h>
 #include <unordered_map>
 
@@ -30,6 +31,7 @@ private:
     Dataset::const_iterator play_itr_;
     bool playing_;
     param::OutputProgressParameter::Ptr play_progress_;
+    param::OutputTextParameter::Ptr current_frame_;
 
     Output* output_pointcloud_;
     Output* output_rois_;
