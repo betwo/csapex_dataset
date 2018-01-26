@@ -49,6 +49,7 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
     auto reload        = param::ParameterFactory::declareTrigger("reload");
     auto start_play    = param::ParameterFactory::declareTrigger("start play");
     auto stop_play     = param::ParameterFactory::declareTrigger("stop play");
+    auto start_instantly = param::ParameterFactory::declareBool("start instantly", false);
     auto play_progress = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
     auto current_frame = param::ParameterFactory::declareOutputText("current frame").build<param::OutputTextParameter>();
 
@@ -78,6 +79,13 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
 
     parameters.addParameter(index_file, [this](param::Parameter* param) { import(param->as<std::string>()); });
     parameters.addConditionalParameter(reload, no_play_only, [this, index_file](param::Parameter* param) { import(index_file->as<std::string>()); });
+    parameters.addParameter(start_instantly,
+                            [this](param::Parameter* param)
+                            {
+                                param_start_instantly_ = param->as<bool>();
+                                if (param_start_instantly_ && dataset_)
+                                    startPlay();
+                            });
 
     parameters.addParameter(load_classes, param_load_classes_);
 
@@ -226,6 +234,9 @@ void SandDatasetImporter::import(const boost::filesystem::path& path)
     play_itr_ = dataset_->begin();
     play_progress_->setProgress(0, dataset_->size());
     negative_rois_.clear();
+
+    if (param_start_instantly_)
+        startPlay();
 }
 
 void SandDatasetImporter::generateNegativeSamples()

@@ -37,6 +37,7 @@ private:
     Output* output_rois_;
     Event*  event_finished_;
 
+    bool param_start_instantly_;
     int param_load_classes_;
     bool param_generate_negative_;
     int param_generate_seed_;
