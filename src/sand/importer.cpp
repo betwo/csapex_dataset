@@ -99,7 +99,12 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
     parameters.addConditionalParameter(check_classes, overlap_only, param_check_overlap_classes_);
 
     parameters.addConditionalParameter(start_play, no_play_only, [this](param::Parameter*) { if (dataset_) startPlay(); });
-    parameters.addConditionalParameter(stop_play, play_only, [this](param::Parameter*) { playing_ = false; });
+    parameters.addConditionalParameter(stop_play, play_only,
+                                       [this](param::Parameter*)
+                                       {
+                                           playing_ = false;
+                                           ainfo << "Stop playing";
+                                       });
     parameters.addConditionalParameter(play_progress, play_only);
     parameters.addConditionalParameter(current_frame, play_only);
 
@@ -207,6 +212,11 @@ void SandDatasetImporter::process()
         play_progress_->advanceProgress();
         current_frame_->set("Frame ID: " + std::to_string(entry.getId()));
         ++play_itr_;
+
+        if ((int)play_progress_->getProgress() % 100 == 0)
+            ainfo << "Play progress " << (play_progress_->getProgress() / play_progress_->getProgressMaximum() * 100) << "%"
+                          <<" (" << play_progress_->getProgress() << " of " << play_progress_->getProgressMaximum() << ")"
+                          << std::endl;
     }
     else
     {
@@ -217,6 +227,8 @@ void SandDatasetImporter::process()
         msg::publish(output_pointcloud_, end);
         msg::publish(output_rois_, end);
         msg::trigger(event_finished_);
+
+        ainfo << "Play progress 100%, finished" << std::endl;
     }
 }
 
@@ -323,4 +335,6 @@ void SandDatasetImporter::startPlay()
 
     play_itr_ = dataset_->begin();
     playing_ = true;
+
+    ainfo << "Start playing...";
 }
