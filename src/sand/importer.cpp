@@ -6,6 +6,7 @@
 #include <csapex/msg/io.h>
 #include <csapex/msg/generic_vector_message.hpp>
 #include <csapex/utility/register_apex_plugin.h>
+#include <csapex/signal/event.h>
 
 #include <csapex_point_cloud/msg/point_cloud_message.h>
 #include <pcl/conversions.h>
@@ -29,6 +30,8 @@ int classToBit(Annotation::Class clazz)
     else
         return 1 << static_cast<int>(clazz);
 }
+
+static const std::string LABEL_START_PLAY = "start play";
 }
 
 SandDatasetImporter::SandDatasetImporter() :
@@ -47,7 +50,7 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
     auto index_file    = param::ParameterFactory::declareFileInputPath("index file", "").build();
 
     auto reload        = param::ParameterFactory::declareTrigger("reload");
-    auto start_play    = param::ParameterFactory::declareTrigger("start play");
+    auto start_play    = param::ParameterFactory::declareTrigger(LABEL_START_PLAY);
     auto stop_play     = param::ParameterFactory::declareTrigger("stop play");
     auto start_instantly = param::ParameterFactory::declareBool("start instantly", false);
     auto play_progress = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
@@ -84,7 +87,10 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
                             {
                                 param_start_instantly_ = param->as<bool>();
                                 if (param_start_instantly_ && dataset_)
+                                {
                                     startPlay();
+                                    triggerStartPlayEvent();
+                                }
                             });
 
     parameters.addParameter(load_classes, param_load_classes_);
@@ -103,7 +109,7 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
                                        [this](param::Parameter*)
                                        {
                                            playing_ = false;
-                                           ainfo << "Stop playing";
+                                           ainfo << "Stop playing" << std::endl;;
                                        });
     parameters.addConditionalParameter(play_progress, play_only);
     parameters.addConditionalParameter(current_frame, play_only);
@@ -248,7 +254,10 @@ void SandDatasetImporter::import(const boost::filesystem::path& path)
     negative_rois_.clear();
 
     if (param_start_instantly_)
+    {
         startPlay();
+        triggerStartPlayEvent();
+    }
 }
 
 void SandDatasetImporter::generateNegativeSamples()
@@ -336,5 +345,17 @@ void SandDatasetImporter::startPlay()
     play_itr_ = dataset_->begin();
     playing_ = true;
 
-    ainfo << "Start playing...";
+    ainfo << "Start playing..." << std::endl;
+}
+
+void SandDatasetImporter::triggerStartPlayEvent()
+{
+    const auto& events = node_modifier_->getEvents();
+    auto itr = std::find_if(events.begin(), events.end(),
+                            [](const EventPtr& event) { return event->getLabel() == LABEL_START_PLAY; });
+    if (itr == events.end())
+        throw std::runtime_error("Unable to find 'start play' event");
+
+    auto& ptr = (*itr);
+    ptr->trigger();
 }

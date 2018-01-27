@@ -23,6 +23,7 @@ private:
     void import(const boost::filesystem::path& path);
     void startPlay();
     void generateNegativeSamples();
+    void triggerStartPlayEvent();
 
 private:
     std::unique_ptr<Dataset> dataset_;
