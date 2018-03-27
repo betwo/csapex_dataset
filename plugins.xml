@@ -28,6 +28,11 @@
       <tags>dataset, people</tags>
     </class>
 
+    <class type="csapex::dataset::biwi::RGBDIDImporter" base_class_type="csapex::Node">
+        <description>Importer for the biwi RGBD-ID dataset.</description>
+        <tags>dataset</tags>
+    </class>
+
     <class type="csapex::dataset::sand::SandDatasetImporter" base_class_type="csapex::Node">
         <description>Importer for Sand datasets.</description>
         <tags>dataset</tags>

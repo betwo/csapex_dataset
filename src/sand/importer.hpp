@@ -6,6 +6,7 @@
 #include <csapex/param/output_text_parameter.h>
 #include <csapex_opencv/roi_message.h>
 #include <unordered_map>
+#include <csapex/param/interval_parameter.h>
 
 namespace csapex { namespace dataset { namespace sand {
 
@@ -21,9 +22,9 @@ public:
 
 private:
     void import(const boost::filesystem::path& path);
+    void triggerStartPlayEvent();
     void startPlay();
     void generateNegativeSamples();
-    void triggerStartPlayEvent();
 
 private:
     std::unique_ptr<Dataset> dataset_;
@@ -34,9 +35,11 @@ private:
     param::OutputProgressParameter::Ptr play_progress_;
     param::OutputTextParameter::Ptr current_frame_;
 
-    Output* output_pointcloud_;
-    Output* output_rois_;
-    Event*  event_finished_;
+    Output*                       output_pointcloud_;
+    Output*                       output_rois_;
+    Event*                        event_finished_;
+    param::IntervalParameter::Ptr interval_;
+    std::pair<int,int>            interval_boundaries_;
 
     bool param_start_instantly_;
     int param_load_classes_;

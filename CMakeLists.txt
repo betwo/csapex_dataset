@@ -42,6 +42,8 @@ file(GLOB_RECURSE sources
     src/people_visual/*.cpp
     src/sand/*.hpp
     src/sand/*.cpp
+    src/biwi/*.hpp
+    src/biwi/*.cpp
 )
 
 add_library(csapex_dataset_node
