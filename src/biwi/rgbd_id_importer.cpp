@@ -13,6 +13,8 @@
 
 #include <map>
 
+#include <boost/regex.hpp>
+
 using namespace csapex;
 using namespace dataset;
 using namespace biwi;
@@ -37,7 +39,7 @@ void RGBDIDImporter::setup(NodeModifier &node_modifier)
 
 void RGBDIDImporter::setupParameters(Parameterizable &parameters)
 {
-    auto path    = param::ParameterFactory::declareFileInputPath("path", "").build();
+    auto path    = param::ParameterFactory::declareDirectoryInputPath("path", "").build();
 
     auto reload          = param::ParameterFactory::declareTrigger("reload");
     auto start_play      = param::ParameterFactory::declareTrigger("start play");
@@ -129,6 +131,12 @@ void RGBDIDImporter::import(const boost::filesystem::path &path)
     while(dir_iter != end) {
         const bfs::path current_path = dir_iter->path();
         if(bfs::is_regular_file(current_path)) {
+             const std::string file = current_path.filename().string();
+             const std::size_t delim_pos = file.find_first_of('-');
+             const std::string id = file.substr(0,delim_pos);
+             const char type = file[delim_pos+1];
+
+             std::cout << "id: " << id << " type: " << type << std::endl;
 
         }
         ++dir_iter;

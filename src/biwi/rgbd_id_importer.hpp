@@ -25,7 +25,6 @@ private:
         boost::filesystem::path     path_rgb;
         boost::filesystem::path     path_depth;
         boost::filesystem::path     path_mask;
-        ulong                       timestamp;
     };
 
 public:
