@@ -88,17 +88,18 @@ void RGBDIDImporter::process()
 {
     if (data_iterator_ != data_.end())
     {
+        auto now = std::chrono::system_clock::now();
+        auto duration = now.time_since_epoch();
+        auto micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+
         auto& entry = *data_iterator_;
+        auto  pointlcoud_msg = std::make_shared<PointCloudMessage>("depth_frame", micros);
+        auto  rgb_msg = std::make_shared<CvMatMessage>(csapex::enc::bgr, "rgb_frame", micros);
+        auto  detph_msg = std::make_shared<CvMatMessage>(csapex::enc::depth_f, "depth_frame", micros);
 
-        //   auto pointcloud_msg = std::make_shared<PointCloudMessage>(entry.getAnnotation().getFrame(), entry.getAnnotation().getTimestamp());
-        //   auto rois_msg = std::make_shared<std::vector<RoiMessage>>();
-
-
-        //   msg::publish(output_pointcloud_, pointcloud_msg);
-        //   msg::publish(output_rgb_, rois_msg);
 
         play_progress_->advanceProgress();
-        //        current_frame_->set("Frame ID: " + std::to_string(entry.getId()));
+        current_frame_->set("Frame ID: " + entry.id);
         ++data_iterator_;
     }
     else
@@ -164,7 +165,7 @@ void RGBDIDImporter::import(const boost::filesystem::path &path)
         data_.emplace_back(m);
     }
 
-    std::cout << "Loaded " << data_.size() << " entries! \n";
+    ainfo << "Loaded " << data_.size() << " entries! \n";
 }
 
 void RGBDIDImporter::startPlay()
