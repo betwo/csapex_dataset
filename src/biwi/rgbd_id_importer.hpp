@@ -46,6 +46,7 @@ private:
     Output*                                 output_pointcloud_;
     Output*                                 output_mask_;
     Output*                                 output_rgb_;
+    Output*                                 output_depth_;
     Event*                                  event_finished_;
 
     bool                                    param_start_instantly_;

@@ -34,6 +34,7 @@ void RGBDIDImporter::setup(NodeModifier &node_modifier)
     output_pointcloud_ = node_modifier.addOutput<PointCloudMessage>("Pointcloud");
     output_mask_       = node_modifier.addOutput<CvMatMessage>("Mask");
     output_rgb_        = node_modifier.addOutput<CvMatMessage>("RGB");
+    output_depth_      = node_modifier.addOutput<CvMatMessage>("Depth");
     event_finished_    = node_modifier.addEvent("finished");
 }
 
@@ -92,11 +93,99 @@ void RGBDIDImporter::process()
         auto duration = now.time_since_epoch();
         auto micros = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
 
-        auto& entry = *data_iterator_;
-        auto  pointlcoud_msg = std::make_shared<PointCloudMessage>("depth_frame", micros);
-        auto  rgb_msg = std::make_shared<CvMatMessage>(csapex::enc::bgr, "rgb_frame", micros);
-        auto  detph_msg = std::make_shared<CvMatMessage>(csapex::enc::depth_f, "depth_frame", micros);
+        auto& entry          = *data_iterator_;
+        auto  pointcloud_msg = std::make_shared<PointCloudMessage>("depth_frame", micros);
+        auto  rgb_msg        = std::make_shared<CvMatMessage>(csapex::enc::bgr, "rgb_frame", micros);
+        auto  depth_msg      = std::make_shared<CvMatMessage>(csapex::enc::depth_f, "depth_frame", micros);
+        auto  mask_msg       = std::make_shared<CvMatMessage>(csapex::enc::mono, "depth_frame", micros);
 
+        cv::Mat mask        = cv::imread(entry.path_mask.string(),  CV_LOAD_IMAGE_UNCHANGED);
+        cv::Mat depth_image = cv::imread(entry.path_depth.string(), CV_LOAD_IMAGE_UNCHANGED);
+        cv::Mat rgb_image   = cv::imread(entry.path_rgb.string(),   CV_LOAD_IMAGE_UNCHANGED);
+
+        const static float d_cx   = 319.5f;
+        const static float d_cy   = 239.5f;
+        const static float d_fx   = 575.8f;
+        const static float d_fy   = 575.8f;
+        const static int d_width   = 640;
+        const static int d_height  = 480;
+        const static float rgb_cx = 319.5f;
+        const static float rgb_cy = 239.5f;
+        const static float rgb_fx = 525.0f;
+        const static float rgb_fy = 525.0f;
+        const static int rgb_height = 960;
+        const static int rgb_width  = 1280;
+        const static float tx = 0.025f;
+
+        if(mask.rows != d_height) {
+            throw std::runtime_error("Mask image height does not match!");
+        }
+        if(mask.cols != d_width) {
+            throw std::runtime_error("Mask image width does not match!");
+        }
+        if(depth_image.rows != d_height) {
+            throw std::runtime_error("Depth image height does not match!");
+        }
+        if(depth_image.cols != d_width) {
+            throw std::runtime_error("Depth image width does not match!");
+        }
+        if(rgb_image.rows != rgb_height) {
+            throw std::runtime_error("RGB image height does not match!");
+        }
+        if(rgb_image.cols != rgb_width) {
+            throw std::runtime_error("RGB image width does not match!");
+        }
+
+        auto depth = [&depth_image](const int y, const int x){
+            return depth_image.at<ushort>(y,x) * 1000.0f;
+        };
+
+        /// TAKEN FROM THE INFORMATION FILE OF BIWI ...
+        //  RGB intrinsics matrix: [525.0, 0.0, 319.5, 0.0, 525.0, 239.5, 0.0, 0.0, 1.0]
+        //  Depth intrinsics matrix: [575.8, 0.0, 319.5, 0.0, 575.8, 239.5, 0.0, 0.0, 1.0]
+        //  RGB-Depth extrinsic parameters: T = [0.025 0.0 0.0], R = [0.0 0.0 0.0].
+
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr points(new pcl::PointCloud<pcl::PointXYZRGB>(640, 480));
+        for(int i = 0 ; i < d_height; ++i) {
+            for(int j = 0 ; j < d_width ; ++j) {
+                const float d = depth(i,j);
+                pcl::PointXYZRGB &p = points->at(j,i);
+                if(std::isnormal(d)) {
+                    p.x = (static_cast<float>(j) - d_cx) * d / d_fx;
+                    p.y = (static_cast<float>(i) - d_cy) * d / d_fy;
+                    p.z = d;
+
+                    std::cout << p.x << " " << p.y << " " << p.z << "\n";
+
+                    /// get the color image point
+                    const int rgb_x = static_cast<int>(((p.x + tx) * rgb_fx) / d + rgb_cx);
+                    const int rgb_y = static_cast<int>(( p.y       * rgb_fy) / d + rgb_cy);
+                    if(rgb_x >= 0 && rgb_x < rgb_width &&
+                            rgb_y >= 0 && rgb_y < rgb_height) {
+                        const auto bgr = rgb_image.at<cv::Vec3b>(rgb_y, rgb_x);
+                        p.b = bgr[0];
+                        p.r = bgr[1];
+                        p.g = bgr[2];
+                    }
+                } else {
+                    p.x = std::numeric_limits<float>::quiet_NaN();
+                    p.y = std::numeric_limits<float>::quiet_NaN();
+                    p.z = std::numeric_limits<float>::quiet_NaN();
+                }
+
+
+            }
+        }
+
+        pointcloud_msg->value = points;
+        rgb_msg->value   = rgb_image.clone();
+        depth_msg->value = depth_image.clone();
+        mask_msg->value  = mask.clone();
+
+        msg::publish(output_pointcloud_, pointcloud_msg);
+        msg::publish(output_rgb_, rgb_msg);
+        msg::publish(output_depth_, depth_msg);
+        msg::publish(output_mask_, mask_msg);
 
         play_progress_->advanceProgress();
         current_frame_->set("Frame ID: " + entry.id);
