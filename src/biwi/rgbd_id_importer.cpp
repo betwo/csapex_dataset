@@ -55,22 +55,22 @@ void RGBDIDImporter::setupParameters(Parameterizable &parameters)
     parameters.addConditionalParameter(reload, no_play_only, [this, path](param::Parameter* param) { import(path->as<std::string>()); });
     parameters.addParameter(start_instantly,
                             [this](param::Parameter* param)
-                            {
-                                param_start_instantly_ = param->as<bool>();
-                                if (param_start_instantly_ && data_.size() > 0)
-                                {
-                                    startPlay();
-                                    triggerStartPlayEvent();
-                                }
-                            });
+    {
+        param_start_instantly_ = param->as<bool>();
+        if (param_start_instantly_ && data_.size() > 0)
+        {
+            startPlay();
+            triggerStartPlayEvent();
+        }
+    });
 
     parameters.addConditionalParameter(start_play, no_play_only, [this](param::Parameter*) { if ( data_.size() > 0) startPlay(); });
     parameters.addConditionalParameter(stop_play, play_only,
                                        [this](param::Parameter*)
-                                       {
-                                           playing_ = false;
-                                           ainfo << "Stop playing" << std::endl;;
-                                       });
+    {
+        playing_ = false;
+        ainfo << "Stop playing" << std::endl;;
+    });
     parameters.addConditionalParameter(play_progress, play_only);
     parameters.addConditionalParameter(current_frame, play_only);
 
@@ -90,15 +90,15 @@ void RGBDIDImporter::process()
     {
         auto& entry = *data_iterator_;
 
-     //   auto pointcloud_msg = std::make_shared<PointCloudMessage>(entry.getAnnotation().getFrame(), entry.getAnnotation().getTimestamp());
-     //   auto rois_msg = std::make_shared<std::vector<RoiMessage>>();
+        //   auto pointcloud_msg = std::make_shared<PointCloudMessage>(entry.getAnnotation().getFrame(), entry.getAnnotation().getTimestamp());
+        //   auto rois_msg = std::make_shared<std::vector<RoiMessage>>();
 
 
-     //   msg::publish(output_pointcloud_, pointcloud_msg);
-     //   msg::publish(output_rgb_, rois_msg);
+        //   msg::publish(output_pointcloud_, pointcloud_msg);
+        //   msg::publish(output_rgb_, rois_msg);
 
         play_progress_->advanceProgress();
-//        current_frame_->set("Frame ID: " + std::to_string(entry.getId()));
+        //        current_frame_->set("Frame ID: " + std::to_string(entry.getId()));
         ++data_iterator_;
     }
     else
@@ -131,16 +131,40 @@ void RGBDIDImporter::import(const boost::filesystem::path &path)
     while(dir_iter != end) {
         const bfs::path current_path = dir_iter->path();
         if(bfs::is_regular_file(current_path)) {
-             const std::string file = current_path.filename().string();
-             const std::size_t delim_pos = file.find_first_of('-');
-             const std::string id = file.substr(0,delim_pos);
-             const char type = file[delim_pos+1];
+            const std::string file = current_path.filename().string();
+            const std::size_t delim_pos = file.find_first_of('-');
+            const std::string id = file.substr(0,delim_pos);
+            const char type = file[delim_pos+1];
 
-             std::cout << "id: " << id << " type: " << type << std::endl;
-
+            auto &entry = content[id];
+            switch(type) {
+            case 'a':
+                /// rgb image
+                entry.path_rgb = current_path;
+                break;
+            case 'b':
+                /// depth image
+                entry.path_depth = current_path;
+                break;
+            case 'c':
+                /// depth label map
+                entry.path_mask = current_path;
+                break;
+            default:
+                /// ignore
+                break;
+            }
         }
         ++dir_iter;
     }
+
+    for(const auto &e : content) {
+        MetaEntry m = e.second;
+        m.id = e.first;
+        data_.emplace_back(m);
+    }
+
+    std::cout << "Loaded " << data_.size() << " entries! \n";
 }
 
 void RGBDIDImporter::startPlay()
