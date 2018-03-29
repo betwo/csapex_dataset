@@ -8,8 +8,10 @@
 #include <csapex/utility/register_apex_plugin.h>
 #include <csapex/signal/event.h>
 
+#include <csapex/msg/generic_vector_message.hpp>
 #include <csapex_opencv/cv_mat_message.h>
 #include <csapex_point_cloud/msg/point_cloud_message.h>
+#include <csapex_point_cloud/msg/indeces_message.h>
 
 #include <map>
 
@@ -31,11 +33,13 @@ RGBDIDImporter::RGBDIDImporter() :
 
 void RGBDIDImporter::setup(NodeModifier &node_modifier)
 {
-    output_pointcloud_ = node_modifier.addOutput<PointCloudMessage>("Pointcloud");
-    output_mask_       = node_modifier.addOutput<CvMatMessage>("Mask");
-    output_rgb_        = node_modifier.addOutput<CvMatMessage>("RGB");
-    output_depth_      = node_modifier.addOutput<CvMatMessage>("Depth");
-    event_finished_    = node_modifier.addEvent("finished");
+    output_pointcloud_      = node_modifier.addOutput<PointCloudMessage>("Pointcloud");
+    output_mask_            = node_modifier.addOutput<CvMatMessage>("Mask");
+    output_indices_         = node_modifier.addOutput<GenericVectorMessage, pcl::PointIndices>("Clusters");
+    output_indices_msgs_    = node_modifier.addOutput<GenericVectorMessage, pcl::PointIndices>("Clusters");
+    output_rgb_             = node_modifier.addOutput<CvMatMessage>("RGB");
+    output_depth_           = node_modifier.addOutput<CvMatMessage>("Depth");
+    event_finished_         = node_modifier.addEvent("finished");
 }
 
 void RGBDIDImporter::setupParameters(Parameterizable &parameters)
@@ -51,12 +55,14 @@ void RGBDIDImporter::setupParameters(Parameterizable &parameters)
     auto play_progress   = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
     auto current_frame   = param::ParameterFactory::declareOutputText("current frame").build<param::OutputTextParameter>();
     auto types_to_play   = param::ParameterFactory::declareParameterStringSet("type", types, "still+walking");
+    auto cluster_depth_deviation = param::ParameterFactory::declareRange("cluster depth deviation", 0.0, 1.0, 0.1, 0.001);
 
     auto play_only = [this]() { return playing_; };
     auto no_play_only = [this]() { return data_.size() > 0 && !playing_; };
 
     parameters.addParameter(path, [this](param::Parameter* param) { import(param->as<std::string>()); });
     parameters.addParameter(types_to_play, types_to_play_);
+    parameters.addParameter(cluster_depth_deviation, depth_deviation_);
     parameters.addConditionalParameter(reload, no_play_only, [this, path](param::Parameter* param) { import(path->as<std::string>()); });
     parameters.addParameter(start_instantly,
                             [this](param::Parameter* param)
@@ -102,6 +108,8 @@ void RGBDIDImporter::process()
         auto  rgb_msg        = std::make_shared<CvMatMessage>(csapex::enc::bgr,     "rgb_frame", micros);
         auto  depth_msg      = std::make_shared<CvMatMessage>(csapex::enc::depth_f, "depth_frame", micros);
         auto  mask_msg       = std::make_shared<CvMatMessage>(csapex::enc::mono,    "depth_frame", micros);
+        auto  indices_msg    = std::make_shared<std::vector<pcl::PointIndices>>();
+        auto  incides_msgs = std::make_shared<std::vector<PointIndicesMessage>>();
 
         cv::Mat mask        = cv::imread(entry.path_mask.string(),  CV_LOAD_IMAGE_UNCHANGED);
         cv::Mat depth_image = cv::imread(entry.path_depth.string(), CV_LOAD_IMAGE_UNCHANGED);
@@ -122,22 +130,22 @@ void RGBDIDImporter::process()
         const static float tx         = 0.025f;
 
         if(mask.rows != d_height) {
-            throw std::runtime_error("Mask image height does not match!");
+            throw std::runtime_error("Mask image '" + entry.path_mask.string() + "' height does not match!");
         }
         if(mask.cols != d_width) {
-            throw std::runtime_error("Mask image width does not match!");
+            throw std::runtime_error("Mask image '" + entry.path_mask.string() + "' width does not match!");
         }
         if(depth_image.rows != d_height) {
-            throw std::runtime_error("Depth image height does not match!");
+            throw std::runtime_error("Depth image '" + entry.path_depth.string() + "' height does not match!");
         }
         if(depth_image.cols != d_width) {
-            throw std::runtime_error("Depth image width does not match!");
+            throw std::runtime_error("Depth image '" + entry.path_depth.string() + "' width does not match!");
         }
         if(rgb_image.rows != rgb_height) {
-            throw std::runtime_error("RGB image height does not match!");
+            throw std::runtime_error("RGB image '" + entry.path_rgb.string() + "' height does not match!");
         }
         if(rgb_image.cols != rgb_width) {
-            throw std::runtime_error("RGB image width does not match!");
+            throw std::runtime_error("RGB image '" + entry.path_rgb.string() + "' width does not match!");
         }
 
         auto depth = [&depth_image](const int y, const int x){
@@ -179,6 +187,44 @@ void RGBDIDImporter::process()
             }
         }
 
+        std::map<uchar, pcl::PointIndices> clusters;
+        std::map<uchar, double>            mean_depths;
+        for(int i = 0 ; i < d_height ; ++i) {
+            for(int j = 0 ; j < d_width ; ++j) {
+                const uchar id = mask.at<uchar>(i,j);
+                if(id > 0) {
+                    const double d = depth(i,j);
+                    if(std::isnormal(d)) {
+                        clusters[id].indices.emplace_back(i * d_width + j);
+                        mean_depths[id] += depth(i,j);
+                    }
+                }
+            }
+        }
+
+        for(const auto &c : clusters) {
+            indices_msg->emplace_back(pcl::PointIndices());
+            pcl::PointIndices &indices = indices_msg->back();
+            double mean_depth = mean_depths[c.first] / static_cast<double>(c.second.indices.size());
+
+            auto in_range = [mean_depth, this](const double d) {
+                return std::fabs(d - mean_depth) <= depth_deviation_;
+            };
+
+            for(const auto i : c.second.indices) {
+                if(in_range(depth_image.at<ushort>(i) * 1e-3f)) {
+                    indices.indices.emplace_back(i);
+                }
+            }
+        }
+
+        for(const auto &i : *indices_msg) {
+            PointIndicesMessage im;
+            im.value.reset(new pcl::PointIndices(i));
+            incides_msgs->emplace_back(im);
+        }
+
+
         pointcloud_msg->value = points;
         rgb_msg->value   = rgb_image.clone();
         depth_msg->value = depth_image.clone();
@@ -188,6 +234,8 @@ void RGBDIDImporter::process()
         msg::publish(output_rgb_, rgb_msg);
         msg::publish(output_depth_, depth_msg);
         msg::publish(output_mask_, mask_msg);
+        msg::publish<GenericVectorMessage, pcl::PointIndices>(output_indices_, indices_msg);
+        msg::publish<GenericVectorMessage, PointIndicesMessage>(output_indices_msgs_, incides_msgs);
 
         const double percent = 1.0 - static_cast<double>(std::distance(data_iterator_, data_end_)) /
                                      static_cast<double>(data_entries_to_play_);
@@ -205,6 +253,8 @@ void RGBDIDImporter::process()
         msg::publish(output_pointcloud_, end);
         msg::publish(output_mask_,       end);
         msg::publish(output_rgb_,        end);
+        msg::publish(output_indices_msgs_, end);
+        msg::publish(output_indices_, end);
         msg::trigger(event_finished_);
     }
 }
