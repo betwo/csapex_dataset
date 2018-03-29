@@ -37,11 +37,19 @@ public:
 
 private:
     std::vector<MetaEntry>                  data_;
+    std::vector<MetaEntry>::const_iterator  data_walking_begin_;
     std::vector<MetaEntry>::const_iterator  data_iterator_;
+    std::vector<MetaEntry>::const_iterator  data_end_;
 
+    std::size_t                             data_entries_to_play_;
+
+    std::string                             types_to_play_;
     bool                                    playing_;
     param::OutputProgressParameter::Ptr     play_progress_;
     param::OutputTextParameter::Ptr         current_frame_;
+
+    std::size_t                             progress_;
+    std::size_t                             iteration_;
 
     Output*                                 output_pointcloud_;
     Output*                                 output_mask_;

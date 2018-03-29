@@ -42,17 +42,21 @@ void RGBDIDImporter::setupParameters(Parameterizable &parameters)
 {
     auto path    = param::ParameterFactory::declareDirectoryInputPath("path", "").build();
 
+    std::vector<std::string> types = {{"still", "walking", "still+walking"}};
+
     auto reload          = param::ParameterFactory::declareTrigger("reload");
     auto start_play      = param::ParameterFactory::declareTrigger("start play");
     auto stop_play       = param::ParameterFactory::declareTrigger("stop play");
     auto start_instantly = param::ParameterFactory::declareBool("start instantly", false);
     auto play_progress   = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
     auto current_frame   = param::ParameterFactory::declareOutputText("current frame").build<param::OutputTextParameter>();
+    auto types_to_play   = param::ParameterFactory::declareParameterStringSet("type", types, "still+walking");
 
     auto play_only = [this]() { return playing_; };
     auto no_play_only = [this]() { return data_.size() > 0 && !playing_; };
 
     parameters.addParameter(path, [this](param::Parameter* param) { import(param->as<std::string>()); });
+    parameters.addParameter(types_to_play, types_to_play_);
     parameters.addConditionalParameter(reload, no_play_only, [this, path](param::Parameter* param) { import(path->as<std::string>()); });
     parameters.addParameter(start_instantly,
                             [this](param::Parameter* param)
@@ -95,27 +99,27 @@ void RGBDIDImporter::process()
 
         auto& entry          = *data_iterator_;
         auto  pointcloud_msg = std::make_shared<PointCloudMessage>("depth_frame", micros);
-        auto  rgb_msg        = std::make_shared<CvMatMessage>(csapex::enc::bgr, "rgb_frame", micros);
+        auto  rgb_msg        = std::make_shared<CvMatMessage>(csapex::enc::bgr,     "rgb_frame", micros);
         auto  depth_msg      = std::make_shared<CvMatMessage>(csapex::enc::depth_f, "depth_frame", micros);
-        auto  mask_msg       = std::make_shared<CvMatMessage>(csapex::enc::mono, "depth_frame", micros);
+        auto  mask_msg       = std::make_shared<CvMatMessage>(csapex::enc::mono,    "depth_frame", micros);
 
         cv::Mat mask        = cv::imread(entry.path_mask.string(),  CV_LOAD_IMAGE_UNCHANGED);
         cv::Mat depth_image = cv::imread(entry.path_depth.string(), CV_LOAD_IMAGE_UNCHANGED);
         cv::Mat rgb_image   = cv::imread(entry.path_rgb.string(),   CV_LOAD_IMAGE_UNCHANGED);
 
-        const static float d_cx   = 319.5f;
-        const static float d_cy   = 239.5f;
-        const static float d_fx   = 575.8f;
-        const static float d_fy   = 575.8f;
-        const static int d_width   = 640;
-        const static int d_height  = 480;
-        const static float rgb_cx = 319.5f;
-        const static float rgb_cy = 239.5f;
-        const static float rgb_fx = 525.0f;
-        const static float rgb_fy = 525.0f;
-        const static int rgb_height = 960;
-        const static int rgb_width  = 1280;
-        const static float tx = 0.025f;
+        const static float d_cx     = 319.5f;
+        const static float d_cy     = 239.5f;
+        const static float d_fx     = 575.8f;
+        const static float d_fy     = 575.8f;
+        const static int   d_width  = 640;
+        const static int   d_height = 480;
+        const static float rgb_cx     = 319.5f * 2.f;
+        const static float rgb_cy     = 239.5f * 2.f;
+        const static float rgb_fx     = 525.0f * 2.f;
+        const static float rgb_fy     = 525.0f * 2.f;
+        const static int   rgb_height = 960;
+        const static int   rgb_width  = 1280;
+        const static float tx         = 0.025f;
 
         if(mask.rows != d_height) {
             throw std::runtime_error("Mask image height does not match!");
@@ -137,7 +141,7 @@ void RGBDIDImporter::process()
         }
 
         auto depth = [&depth_image](const int y, const int x){
-            return depth_image.at<ushort>(y,x) * 1000.0f;
+            return depth_image.at<ushort>(y,x) * 1e-3f;
         };
 
         /// TAKEN FROM THE INFORMATION FILE OF BIWI ...
@@ -155,8 +159,6 @@ void RGBDIDImporter::process()
                     p.y = (static_cast<float>(i) - d_cy) * d / d_fy;
                     p.z = d;
 
-                    std::cout << p.x << " " << p.y << " " << p.z << "\n";
-
                     /// get the color image point
                     const int rgb_x = static_cast<int>(((p.x + tx) * rgb_fx) / d + rgb_cx);
                     const int rgb_y = static_cast<int>(( p.y       * rgb_fy) / d + rgb_cy);
@@ -164,8 +166,8 @@ void RGBDIDImporter::process()
                             rgb_y >= 0 && rgb_y < rgb_height) {
                         const auto bgr = rgb_image.at<cv::Vec3b>(rgb_y, rgb_x);
                         p.b = bgr[0];
-                        p.r = bgr[1];
-                        p.g = bgr[2];
+                        p.g = bgr[1];
+                        p.r = bgr[2];
                     }
                 } else {
                     p.x = std::numeric_limits<float>::quiet_NaN();
@@ -187,7 +189,12 @@ void RGBDIDImporter::process()
         msg::publish(output_depth_, depth_msg);
         msg::publish(output_mask_, mask_msg);
 
-        play_progress_->advanceProgress();
+        const double percent = 1.0 - static_cast<double>(std::distance(data_iterator_, data_end_)) /
+                                     static_cast<double>(data_entries_to_play_);
+
+        play_progress_->set<int>(static_cast<int>(percent * 100));
+
+//        play_progress_->advanceProgress();
         current_frame_->set("Frame ID: " + entry.id);
         ++data_iterator_;
     }
@@ -214,7 +221,8 @@ void RGBDIDImporter::import(const boost::filesystem::path &path)
 
     data_.clear();
 
-    std::map<std::string, MetaEntry> content;
+    std::map<std::string, MetaEntry> still;
+    std::map<std::string, MetaEntry> walking;
 
     const bfs::recursive_directory_iterator end;
     bfs::recursive_directory_iterator dir_iter( path );
@@ -226,7 +234,8 @@ void RGBDIDImporter::import(const boost::filesystem::path &path)
             const std::string id = file.substr(0,delim_pos);
             const char type = file[delim_pos+1];
 
-            auto &entry = content[id];
+            bool w = current_path.string().find("Walking") != current_path.string().npos;
+            auto &entry = w ? walking[id] : still[id];
             switch(type) {
             case 'a':
                 /// rgb image
@@ -248,19 +257,39 @@ void RGBDIDImporter::import(const boost::filesystem::path &path)
         ++dir_iter;
     }
 
-    for(const auto &e : content) {
+    for(const auto &e : still) {
         MetaEntry m = e.second;
         m.id = e.first;
         data_.emplace_back(m);
     }
+    for(const auto &e : walking) {
+        MetaEntry m = e.second;
+        m.id = e.first;
+        data_.emplace_back(m);
+    };
+    data_walking_begin_ = data_.begin() + still.size() + 1;
 
     ainfo << "Loaded " << data_.size() << " entries! \n";
 }
 
 void RGBDIDImporter::startPlay()
 {
-    data_iterator_ = data_.begin();
+    /// choose which parts to play
+    if(types_to_play_ == "still") {
+        data_iterator_  = data_.begin();
+        data_end_       = data_walking_begin_;
+    } else if(types_to_play_ == "walking") {
+        data_iterator_  = data_walking_begin_;
+        data_end_       = data_.end();
+    } else {
+        data_iterator_  = data_.begin();
+        data_end_       = data_.end();
+    }
+
+    data_entries_to_play_ = std::distance(data_iterator_, data_end_);
+
     playing_ = true;
+    play_progress_->set<int>(0);
     ainfo << "Start playing..." << std::endl;
 }
 
