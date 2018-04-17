@@ -259,7 +259,7 @@ void PeopleDatasetImporterLegacy::process()
         lets_play_ = false;
         msg::trigger(finished_);
 
-        auto end = connection_types::makeEmpty<EndOfSequenceMessage>();
+        auto end = makeEmpty<EndOfSequenceMessage>();
 
         msg::publish(out_depth_image_, end);
         msg::publish(out_bgr_image_, end);
