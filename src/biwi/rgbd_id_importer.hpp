@@ -59,8 +59,10 @@ private:
     Output*                                 output_depth_;
     Event*                                  event_finished_;
     double                                  depth_deviation_;
+    double                                  cluster_depth_maximum_;
 
     bool                                    param_start_instantly_;
+    bool                                    ignore_errors_;
 
     void import(const boost::filesystem::path& path);
     void startPlay();

@@ -52,10 +52,12 @@ void RGBDIDImporter::setupParameters(Parameterizable &parameters)
     auto start_play      = param::ParameterFactory::declareTrigger("start play");
     auto stop_play       = param::ParameterFactory::declareTrigger("stop play");
     auto start_instantly = param::ParameterFactory::declareBool("start instantly", false);
+    auto ignore_errors   = param::ParameterFactory::declareBool("ignore errors", false);
     auto play_progress   = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
     auto current_frame   = param::ParameterFactory::declareOutputText("current frame").build<param::OutputTextParameter>();
     auto types_to_play   = param::ParameterFactory::declareParameterStringSet("type", types, "still+walking");
     auto cluster_depth_deviation = param::ParameterFactory::declareRange("cluster depth deviation", 0.0, 1.0, 0.1, 0.001);
+    auto cluster_depth_maximum   = param::ParameterFactory::declareRange("cluster depth maximum", 0.0, 5.0, 0.1, 0.001);
 
     auto play_only = [this]() { return playing_; };
     auto no_play_only = [this]() { return data_.size() > 0 && !playing_; };
@@ -63,6 +65,7 @@ void RGBDIDImporter::setupParameters(Parameterizable &parameters)
     parameters.addParameter(path, [this](param::Parameter* param) { import(param->as<std::string>()); });
     parameters.addParameter(types_to_play, types_to_play_);
     parameters.addParameter(cluster_depth_deviation, depth_deviation_);
+    parameters.addParameter(cluster_depth_maximum, cluster_depth_maximum_);
     parameters.addConditionalParameter(reload, no_play_only, [this, path](param::Parameter* param) { import(path->as<std::string>()); });
     parameters.addParameter(start_instantly,
                             [this](param::Parameter* param)
@@ -74,6 +77,7 @@ void RGBDIDImporter::setupParameters(Parameterizable &parameters)
             triggerStartPlayEvent();
         }
     });
+    parameters.addParameter(ignore_errors, ignore_errors_);
 
     parameters.addConditionalParameter(start_play, no_play_only, [this](param::Parameter*) { if ( data_.size() > 0) startPlay(); });
     parameters.addConditionalParameter(stop_play, play_only,
@@ -109,7 +113,7 @@ void RGBDIDImporter::process()
         auto  depth_msg      = std::make_shared<CvMatMessage>(csapex::enc::depth_f, "depth_frame", micros);
         auto  mask_msg       = std::make_shared<CvMatMessage>(csapex::enc::mono,    "depth_frame", micros);
         auto  indices_msg    = std::make_shared<std::vector<pcl::PointIndices>>();
-        auto  incides_msgs = std::make_shared<std::vector<PointIndicesMessage>>();
+        auto  incides_msgs   = std::make_shared<std::vector<PointIndicesMessage>>();
 
         cv::Mat mask        = cv::imread(entry.path_mask.string(),  CV_LOAD_IMAGE_UNCHANGED);
         cv::Mat depth_image = cv::imread(entry.path_depth.string(), CV_LOAD_IMAGE_UNCHANGED);
@@ -129,121 +133,129 @@ void RGBDIDImporter::process()
         const static int   rgb_width  = 1280;
         const static float tx         = 0.025f;
 
-        if(mask.rows != d_height) {
+        bool error = mask.rows != d_height;
+        if(error && !ignore_errors_) {
             throw std::runtime_error("Mask image '" + entry.path_mask.string() + "' height does not match!");
         }
-        if(mask.cols != d_width) {
+        error = mask.cols != d_width;
+        if(error && !ignore_errors_) {
             throw std::runtime_error("Mask image '" + entry.path_mask.string() + "' width does not match!");
         }
-        if(depth_image.rows != d_height) {
+        error = depth_image.rows != d_height;
+        if(error && !ignore_errors_) {
             throw std::runtime_error("Depth image '" + entry.path_depth.string() + "' height does not match!");
         }
-        if(depth_image.cols != d_width) {
+        error = depth_image.cols != d_width;
+        if(error && !ignore_errors_) {
             throw std::runtime_error("Depth image '" + entry.path_depth.string() + "' width does not match!");
         }
-        if(rgb_image.rows != rgb_height) {
+        error = rgb_image.rows != rgb_height;
+        if(error && !ignore_errors_) {
             throw std::runtime_error("RGB image '" + entry.path_rgb.string() + "' height does not match!");
         }
-        if(rgb_image.cols != rgb_width) {
+        error = rgb_image.cols != rgb_width;
+        if(error && !ignore_errors_) {
             throw std::runtime_error("RGB image '" + entry.path_rgb.string() + "' width does not match!");
         }
-
-        auto depth = [&depth_image](const int y, const int x){
-            return depth_image.at<ushort>(y,x) * 1e-3f;
+        auto depth = [&depth_image, this](const int y, const int x){
+            double d = depth_image.at<ushort>(y,x) * 1e-3f;
+            return d <= cluster_depth_maximum_ ? d : std::numeric_limits<double>::quiet_NaN();
         };
 
         /// TAKEN FROM THE INFORMATION FILE OF BIWI ...
         //  RGB intrinsics matrix: [525.0, 0.0, 319.5, 0.0, 525.0, 239.5, 0.0, 0.0, 1.0]
         //  Depth intrinsics matrix: [575.8, 0.0, 319.5, 0.0, 575.8, 239.5, 0.0, 0.0, 1.0]
         //  RGB-Depth extrinsic parameters: T = [0.025 0.0 0.0], R = [0.0 0.0 0.0].
-
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr points(new pcl::PointCloud<pcl::PointXYZRGB>(640, 480));
-        for(int i = 0 ; i < d_height; ++i) {
-            for(int j = 0 ; j < d_width ; ++j) {
-                const float d = depth(i,j);
-                pcl::PointXYZRGB &p = points->at(j,i);
-                if(std::isnormal(d)) {
-                    p.x = (static_cast<float>(j) - d_cx) * d / d_fx;
-                    p.y = (static_cast<float>(i) - d_cy) * d / d_fy;
-                    p.z = d;
-
-                    /// get the color image point
-                    const int rgb_x = static_cast<int>(((p.x + tx) * rgb_fx) / d + rgb_cx);
-                    const int rgb_y = static_cast<int>(( p.y       * rgb_fy) / d + rgb_cy);
-                    if(rgb_x >= 0 && rgb_x < rgb_width &&
-                            rgb_y >= 0 && rgb_y < rgb_height) {
-                        const auto bgr = rgb_image.at<cv::Vec3b>(rgb_y, rgb_x);
-                        p.b = bgr[0];
-                        p.g = bgr[1];
-                        p.r = bgr[2];
-                    }
-                } else {
-                    p.x = std::numeric_limits<float>::quiet_NaN();
-                    p.y = std::numeric_limits<float>::quiet_NaN();
-                    p.z = std::numeric_limits<float>::quiet_NaN();
-                }
-
-
-            }
-        }
-
-        std::map<uchar, pcl::PointIndices> clusters;
-        std::map<uchar, double>            mean_depths;
-        for(int i = 0 ; i < d_height ; ++i) {
-            for(int j = 0 ; j < d_width ; ++j) {
-                const uchar id = mask.at<uchar>(i,j);
-                if(id > 0) {
-                    const double d = depth(i,j);
+        if(!error) {
+            pcl::PointCloud<pcl::PointXYZRGB>::Ptr points(new pcl::PointCloud<pcl::PointXYZRGB>(640, 480));
+            for(int i = 0 ; i < d_height; ++i) {
+                for(int j = 0 ; j < d_width ; ++j) {
+                    const float d = depth(i,j);
+                    pcl::PointXYZRGB &p = points->at(j,i);
                     if(std::isnormal(d)) {
-                        clusters[id].indices.emplace_back(i * d_width + j);
-                        mean_depths[id] += depth(i,j);
+                        p.x = (static_cast<float>(j) - d_cx) * d / d_fx;
+                        p.y = (static_cast<float>(i) - d_cy) * d / d_fy;
+                        p.z = d;
+
+                        /// get the color image point
+                        const int rgb_x = static_cast<int>(((p.x + tx) * rgb_fx) / d + rgb_cx);
+                        const int rgb_y = static_cast<int>(( p.y       * rgb_fy) / d + rgb_cy);
+                        if(rgb_x >= 0 && rgb_x < rgb_width &&
+                                rgb_y >= 0 && rgb_y < rgb_height) {
+                            const auto bgr = rgb_image.at<cv::Vec3b>(rgb_y, rgb_x);
+                            p.b = bgr[0];
+                            p.g = bgr[1];
+                            p.r = bgr[2];
+                        }
+                    } else {
+                        p.x = std::numeric_limits<float>::quiet_NaN();
+                        p.y = std::numeric_limits<float>::quiet_NaN();
+                        p.z = std::numeric_limits<float>::quiet_NaN();
+                    }
+
+
+                }
+            }
+
+            std::map<uchar, pcl::PointIndices> clusters;
+            std::map<uchar, double>            mean_depths;
+
+            for(int i = 0 ; i < d_height ; ++i) {
+                for(int j = 0 ; j < d_width ; ++j) {
+                    const uchar id = mask.at<uchar>(i,j);
+                    if(id > 0) {
+                        const double d = depth(i,j);
+                        if(std::isnormal(d)) {
+                            clusters[id].indices.emplace_back(i * d_width + j);
+                            mean_depths[id] += depth(i,j);
+                        }
                     }
                 }
             }
-        }
 
-        for(const auto &c : clusters) {
-            indices_msg->emplace_back(pcl::PointIndices());
-            pcl::PointIndices &indices = indices_msg->back();
-            double mean_depth = mean_depths[c.first] / static_cast<double>(c.second.indices.size());
+            for(const auto &c : clusters) {
+                indices_msg->emplace_back(pcl::PointIndices());
+                pcl::PointIndices &indices = indices_msg->back();
+                double mean_depth = mean_depths[c.first] / static_cast<double>(c.second.indices.size());
 
-            auto in_range = [mean_depth, this](const double d) {
-                return std::fabs(d - mean_depth) <= depth_deviation_;
-            };
+                auto in_range = [mean_depth, this](const double d) {
+                    return std::fabs(d - mean_depth) <= depth_deviation_;
+                };
 
-            for(const auto i : c.second.indices) {
-                if(in_range(depth_image.at<ushort>(i) * 1e-3f)) {
-                    indices.indices.emplace_back(i);
+                for(const auto i : c.second.indices) {
+                    if(in_range(depth_image.at<ushort>(i) * 1e-3f)) {
+                        indices.indices.emplace_back(i);
+                    }
                 }
             }
+
+            for(const auto &i : *indices_msg) {
+                PointIndicesMessage im;
+                im.value.reset(new pcl::PointIndices(i));
+                incides_msgs->emplace_back(im);
+            }
+
+
+            pointcloud_msg->value = points;
+            rgb_msg->value   = rgb_image.clone();
+            depth_msg->value = depth_image.clone();
+            mask_msg->value  = mask.clone();
+
+            msg::publish(output_pointcloud_, pointcloud_msg);
+            msg::publish(output_rgb_, rgb_msg);
+            msg::publish(output_depth_, depth_msg);
+            msg::publish(output_mask_, mask_msg);
+            msg::publish<GenericVectorMessage, pcl::PointIndices>(output_indices_, indices_msg);
+            msg::publish<GenericVectorMessage, PointIndicesMessage>(output_indices_msgs_, incides_msgs);
+            current_frame_->set("Frame ID: " + entry.id);
         }
-
-        for(const auto &i : *indices_msg) {
-            PointIndicesMessage im;
-            im.value.reset(new pcl::PointIndices(i));
-            incides_msgs->emplace_back(im);
-        }
-
-
-        pointcloud_msg->value = points;
-        rgb_msg->value   = rgb_image.clone();
-        depth_msg->value = depth_image.clone();
-        mask_msg->value  = mask.clone();
-
-        msg::publish(output_pointcloud_, pointcloud_msg);
-        msg::publish(output_rgb_, rgb_msg);
-        msg::publish(output_depth_, depth_msg);
-        msg::publish(output_mask_, mask_msg);
-        msg::publish<GenericVectorMessage, pcl::PointIndices>(output_indices_, indices_msg);
-        msg::publish<GenericVectorMessage, PointIndicesMessage>(output_indices_msgs_, incides_msgs);
 
         const double percent = 1.0 - static_cast<double>(std::distance(data_iterator_, data_end_)) /
-                                     static_cast<double>(data_entries_to_play_);
+                static_cast<double>(data_entries_to_play_);
 
         play_progress_->set<int>(static_cast<int>(percent * 100));
 
-//        play_progress_->advanceProgress();
-        current_frame_->set("Frame ID: " + entry.id);
+        //        play_progress_->advanceProgress();
         ++data_iterator_;
     }
     else
