@@ -17,6 +17,8 @@
 
 #include <boost/regex.hpp>
 
+#include <pcl/io/file_io.h>
+
 using namespace csapex;
 using namespace dataset;
 using namespace biwi;
@@ -133,6 +135,7 @@ void RGBDIDImporter::process()
         const static int   rgb_width  = 1280;
         const static float tx         = 0.025f;
 
+
         bool error = mask.rows != d_height;
         if(error && !ignore_errors_) {
             throw std::runtime_error("Mask image '" + entry.path_mask.string() + "' height does not match!");
@@ -159,8 +162,12 @@ void RGBDIDImporter::process()
         }
         auto depth = [&depth_image, this](const int y, const int x){
             double d = depth_image.at<ushort>(y,x) * 1e-3f;
-            return d <= cluster_depth_maximum_ ? d : std::numeric_limits<double>::quiet_NaN();
+            return d <= cluster_depth_maximum_ || cluster_depth_maximum_ == 0.0 ? d : std::numeric_limits<double>::quiet_NaN();
         };
+
+        if(error) {
+            std::cout << "error" << std::endl;
+        }
 
         /// TAKEN FROM THE INFORMATION FILE OF BIWI ...
         //  RGB intrinsics matrix: [525.0, 0.0, 319.5, 0.0, 525.0, 239.5, 0.0, 0.0, 1.0]
@@ -172,6 +179,7 @@ void RGBDIDImporter::process()
                 for(int j = 0 ; j < d_width ; ++j) {
                     const float d = depth(i,j);
                     pcl::PointXYZRGB &p = points->at(j,i);
+
                     if(std::isnormal(d)) {
                         p.x = (static_cast<float>(j) - d_cx) * d / d_fx;
                         p.y = (static_cast<float>(i) - d_cy) * d / d_fy;
@@ -234,7 +242,6 @@ void RGBDIDImporter::process()
                 im.value.reset(new pcl::PointIndices(i));
                 incides_msgs->emplace_back(im);
             }
-
 
             pointcloud_msg->value = points;
             rgb_msg->value   = rgb_image.clone();
