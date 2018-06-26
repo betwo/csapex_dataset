@@ -33,7 +33,7 @@ private:
     csapex::Output  *out_bgr_image_;
     csapex::Output  *out_rois_;
     csapex::Event   *tri_finished_;
-    /// PAREMTERS
+    /// PARAMETERS
     csapex::param::Parameter::Ptr action_import_;
     csapex::param::Parameter::Ptr action_play_start_;
     csapex::param::Parameter::Ptr action_play_stop_;

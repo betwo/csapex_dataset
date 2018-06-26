@@ -80,6 +80,10 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
     auto no_ratio = [this]() { return param_generate_negative_ && param_negative_ratio_ == 0.0; };
     auto overlap_only = [this]() { return param_generate_negative_ && param_no_overlap_; };
 
+    param::Parameter::Ptr interval =  param::ParameterFactory::declareInterval("sample interval", 0, 0, 0, 0, 1);
+    interval_ = std::dynamic_pointer_cast<param::IntervalParameter>(interval);
+    parameters.addParameter(interval_, interval_boundaries_);
+
     parameters.addParameter(index_file, [this](param::Parameter* param) { import(param->as<std::string>()); });
     parameters.addConditionalParameter(reload, no_play_only, [this, index_file](param::Parameter* param) { import(index_file->as<std::string>()); });
     parameters.addParameter(start_instantly,
@@ -172,7 +176,14 @@ private:
 
 void SandDatasetImporter::process()
 {
-    if (play_itr_ != dataset_->end())
+
+
+    if(play_itr_ - dataset_->begin() < interval_boundaries_.first)
+        play_itr_ = dataset_->begin() + interval_boundaries_.first;
+
+    auto end = dataset_->begin() + interval_boundaries_.second + 1;
+
+    if (play_itr_ != end)
     {
         auto& entry = *play_itr_;
 
@@ -252,6 +263,12 @@ void SandDatasetImporter::import(const boost::filesystem::path& path)
     play_itr_ = dataset_->begin();
     play_progress_->setProgress(0, dataset_->size());
     negative_rois_.clear();
+
+    int max_sample = static_cast<int>(dataset_->size() - 1);
+    interval_->setMin(0);
+    interval_->setMax(max_sample);
+    interval_->setLower(0);
+    interval_->setUpper(max_sample);
 
     if (param_start_instantly_)
     {
