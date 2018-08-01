@@ -31,7 +31,7 @@ void ROIImporter::setup(csapex::NodeModifier& node_modifier)
 void ROIImporter::setupParameters(Parameterizable &parameters)
 {
     parameters.addParameter(
-            param::ParameterFactory::declareDirectoryInputPath("roi_dir", "", ""),
+            param::factory::declareDirectoryInputPath("roi_dir", "", ""),
             [this](param::Parameter* param)
             {
                 loadRois(param->as<std::string>());

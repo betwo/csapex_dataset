@@ -25,17 +25,17 @@ PeopleDatasetExporter::PeopleDatasetExporter()
 
 void PeopleDatasetExporter::setupParameters(Parameterizable& parameters)
 {
-    parameters.addParameter(param::ParameterFactory::declareDirectoryOutputPath("directory",
+    parameters.addParameter(param::factory::declareDirectoryOutputPath("directory",
                                                                                 param::ParameterDescription("Dataset root directory"),
                                                                                 ""),
                             directory_);
 
-    parameters.addParameter(param::ParameterFactory::declareValue<int>("class",
+    parameters.addParameter(param::factory::declareValue<int>("class",
                                                                        param::ParameterDescription("Classification class to be saved"),
                                                                        people::HUMAN),
                             class_);
 
-    parameters.addParameter(param::ParameterFactory::declareBool("only_with_rois",
+    parameters.addParameter(param::factory::declareBool("only_with_rois",
                                                                  param::ParameterDescription("Only exports frames with at least 1 ROI"),
                                                                  false),
                             only_with_rois_);

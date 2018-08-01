@@ -27,15 +27,15 @@ PeopleDatasetStats::PeopleDatasetStats() :
 
 void PeopleDatasetStats::setupParameters(Parameterizable& parameter)
 {
-    addParameter(param::ParameterFactory::declareTrigger("load",
+    addParameter(param::factory::declareTrigger("load",
                                                          param::ParameterDescription("Load dataset and generate stats")),
                  std::bind(&PeopleDatasetStats::load, this));
-    addParameter(param::ParameterFactory::declareDirectoryInputPath("path",
+    addParameter(param::factory::declareDirectoryInputPath("path",
                                                                     param::ParameterDescription("Path to dataset"),
                                                                     ""),
                  [this](param::Parameter* param) { path_ = param->as<std::string>(); load();});
 
-    range_ = param::ParameterFactory::declareInterval("range",
+    range_ = param::factory::declareInterval("range",
                                                       param::ParameterDescription("Range for samples"),
                                                       0, 100000, 0, 100000, 1);
     addParameter(range_);

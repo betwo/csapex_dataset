@@ -41,22 +41,22 @@ void ImportINRIAData::setup(NodeModifier &node_modifier)
 
 void ImportINRIAData::setupParameters(Parameterizable &parameters)
 {
-    parameters.addParameter(param::ParameterFactory::declareDirectoryInputPath("/path", ""),
+    parameters.addParameter(param::factory::declareDirectoryInputPath("/path", ""),
                             path_);
-    parameters.addParameter(param::ParameterFactory::declareRange("/negative/window/width", 10, 640, 128, 1),
+    parameters.addParameter(param::factory::declareRange("/negative/window/width", 10, 640, 128, 1),
                             neg_window_size_.width);
-    parameters.addParameter(param::ParameterFactory::declareRange("/negative/window/height", 10, 480, 64, 1),
+    parameters.addParameter(param::factory::declareRange("/negative/window/height", 10, 480, 64, 1),
                             neg_window_size_.height);
-    parameters.addParameter(param::ParameterFactory::declareValue("/negative/rng/seed", 0),
+    parameters.addParameter(param::factory::declareValue("/negative/rng/seed", 0),
                             neg_rng_seed_);
-    parameters.addParameter(param::ParameterFactory::declareBool("/negative/do_sample", true),
+    parameters.addParameter(param::factory::declareBool("/negative/do_sample", true),
                             neg_do_sample_);
 
-    param::Parameter::Ptr param_play = param::ParameterFactory::declareBool("/play", false);
+    param::Parameter::Ptr param_play = param::factory::declareBool("/play", false);
     param_play_ = std::dynamic_pointer_cast<param::ValueParameter>(param_play);
     parameters.addParameter(param_play_, std::bind(&ImportINRIAData::play, this));
 
-    param::Parameter::Ptr param_play_index = param::ParameterFactory::declareRange("/play/index", 0, 1, 1, 1);
+    param::Parameter::Ptr param_play_index = param::factory::declareRange("/play/index", 0, 1, 1, 1);
     param_play_index_ = std::dynamic_pointer_cast<param::RangeParameter>(param_play_index);
     std::function<bool()> show_index =
             [this]() {return samples_.size() > 0;};

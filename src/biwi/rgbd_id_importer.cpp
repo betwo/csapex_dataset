@@ -46,20 +46,20 @@ void RGBDIDImporter::setup(NodeModifier &node_modifier)
 
 void RGBDIDImporter::setupParameters(Parameterizable &parameters)
 {
-    auto path    = param::ParameterFactory::declareDirectoryInputPath("path", "").build();
+    auto path    = param::factory::declareDirectoryInputPath("path", "").build();
 
     std::vector<std::string> types = {{"still", "walking", "still+walking"}};
 
-    auto reload          = param::ParameterFactory::declareTrigger("reload");
-    auto start_play      = param::ParameterFactory::declareTrigger("start play");
-    auto stop_play       = param::ParameterFactory::declareTrigger("stop play");
-    auto start_instantly = param::ParameterFactory::declareBool("start instantly", false);
-    auto ignore_errors   = param::ParameterFactory::declareBool("ignore errors", false);
-    auto play_progress   = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
-    auto current_frame   = param::ParameterFactory::declareOutputText("current frame").build<param::OutputTextParameter>();
-    auto types_to_play   = param::ParameterFactory::declareParameterStringSet("type", types, "still+walking");
-    auto cluster_depth_deviation = param::ParameterFactory::declareRange("cluster depth deviation", 0.0, 1.0, 0.1, 0.001);
-    auto cluster_depth_maximum   = param::ParameterFactory::declareRange("cluster depth maximum", 0.0, 5.0, 0.1, 0.001);
+    auto reload          = param::factory::declareTrigger("reload");
+    auto start_play      = param::factory::declareTrigger("start play");
+    auto stop_play       = param::factory::declareTrigger("stop play");
+    auto start_instantly = param::factory::declareBool("start instantly", false);
+    auto ignore_errors   = param::factory::declareBool("ignore errors", false);
+    auto play_progress   = param::factory::declareOutputProgress("played").build<param::OutputProgressParameter>();
+    auto current_frame   = param::factory::declareOutputText("current frame").build<param::OutputTextParameter>();
+    auto types_to_play   = param::factory::declareParameterStringSet("type", types, "still+walking");
+    auto cluster_depth_deviation = param::factory::declareRange("cluster depth deviation", 0.0, 1.0, 0.1, 0.001);
+    auto cluster_depth_maximum   = param::factory::declareRange("cluster depth maximum", 0.0, 5.0, 0.1, 0.001);
 
     auto play_only = [this]() { return playing_; };
     auto no_play_only = [this]() { return data_.size() > 0 && !playing_; };

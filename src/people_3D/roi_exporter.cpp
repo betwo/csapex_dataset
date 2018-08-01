@@ -33,7 +33,7 @@ void ROIExporter::setup(csapex::NodeModifier& node_modifier)
 void ROIExporter::setupParameters(Parameterizable &parameters)
 {
     parameters.addParameter(
-            param::ParameterFactory::declareDirectoryInputPath("roi_dir", "", ""),
+            param::factory::declareDirectoryInputPath("roi_dir", "", ""),
             config_roi_dir_);
 }
 

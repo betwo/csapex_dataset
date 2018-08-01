@@ -29,11 +29,11 @@ void SandDatasetExporterSlim::setup(NodeModifier& node_modifier)
 
 void SandDatasetExporterSlim::setupParameters(Parameterizable& parameters)
 {
-    auto ref_index_file = param::ParameterFactory::declareFileInputPath("reference index file", "").build();
-    auto index_file     = param::ParameterFactory::declareFileOutputPath("index file", "").build();
-    auto annotation_dir = param::ParameterFactory::declareDirectoryOutputPath("annoation dir", "").build();
-    auto save_empty_rois = param::ParameterFactory::declareBool("save empty rois", false);
-    auto save = param::ParameterFactory::declareTrigger("save");
+    auto ref_index_file = param::factory::declareFileInputPath("reference index file", "").build();
+    auto index_file     = param::factory::declareFileOutputPath("index file", "").build();
+    auto annotation_dir = param::factory::declareDirectoryOutputPath("annoation dir", "").build();
+    auto save_empty_rois = param::factory::declareBool("save empty rois", false);
+    auto save = param::factory::declareTrigger("save");
 
     std::function<void(param::Parameter*)> createDataset = [this, ref_index_file, index_file, annotation_dir](param::Parameter* /*param*/)
     {

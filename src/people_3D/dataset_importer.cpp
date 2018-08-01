@@ -50,62 +50,62 @@ void PeopleDatasetImporter::setup(csapex::NodeModifier& node_modifier)
 
 void PeopleDatasetImporter::setupParameters(csapex::Parameterizable& parameters)
 {
-    action_import_ = param::ParameterFactory::declareTrigger("action/import",
+    action_import_ = param::factory::declareTrigger("action/import",
                                             param::ParameterDescription("Load and prepare datasets"));
-    action_play_start_ = param::ParameterFactory::declareTrigger("action/start",
+    action_play_start_ = param::factory::declareTrigger("action/start",
                                             param::ParameterDescription("Start playing dataset"));
-    action_play_stop_ = param::ParameterFactory::declareTrigger("action/stop",
+    action_play_stop_ = param::factory::declareTrigger("action/stop",
                                            param::ParameterDescription("Stop playing dataset"));
 
-    param_data_positive_ = param::ParameterFactory::declareDirectoryInputPath("data/positive",
+    param_data_positive_ = param::factory::declareDirectoryInputPath("data/positive",
                                                        param::ParameterDescription("Dataset directory for positive samples"),
                                                        "");
-    param_data_negative_ = param::ParameterFactory::declareDirectoryInputPath("data/negative",
+    param_data_negative_ = param::factory::declareDirectoryInputPath("data/negative",
                                                        param::ParameterDescription("Dataset directory for negative samples"),
                                                        "");
-    param_sample_positive_count_ = param::ParameterFactory::declareRange("sample/positive count",
+    param_sample_positive_count_ = param::factory::declareRange("sample/positive count",
                                           param::ParameterDescription("Number of positive samples"),
                                           0, 100000, 1000, 1);
-    param_sample_negative_count_ = param::ParameterFactory::declareRange("sample/negative count",
+    param_sample_negative_count_ = param::factory::declareRange("sample/negative count",
                                           param::ParameterDescription("Number of negative samples"),
                                           0, 100000, 1000, 1);
-    param_sample_negative_rois_ = param::ParameterFactory::declareBool("sample/negative read rois",
+    param_sample_negative_rois_ = param::factory::declareBool("sample/negative read rois",
                                                                        param::ParameterDescription("Use ROIs instead of random sampling"),
                                                                        false);
-    param_sample_negative_size_min_ = param::ParameterFactory::declareRange("sample/negative size min",
+    param_sample_negative_size_min_ = param::factory::declareRange("sample/negative size min",
                                           param::ParameterDescription("Minimum window width for negative samples"),
                                           1, 640, 32, 1);
-    param_sample_negative_size_max_ = param::ParameterFactory::declareRange("sample/negative size max",
+    param_sample_negative_size_max_ = param::factory::declareRange("sample/negative size max",
                                           param::ParameterDescription("Maximum window width for negative samples"),
                                           1, 640, 128, 1);
-    param_sample_negative_size_ratio_ = param::ParameterFactory::declareParameterSet<int>("sample/negative size ratio",
+    param_sample_negative_size_ratio_ = param::factory::declareParameterSet<int>("sample/negative size ratio",
                                                       param::ParameterDescription("Window ratio (width to height) for negative samples"),
                                                       {{"1:2", RATIO_1_TO_2}, {"1:1", RATIO_1_TO_1}, {"free", RATIO_FREE}},
                                                       RATIO_1_TO_2);
-    param_sample_positive_range_ = param::ParameterFactory::declareInterval("sample/positive range",
+    param_sample_positive_range_ = param::factory::declareInterval("sample/positive range",
                                           param::ParameterDescription("Range for positive samples"),
                                           0, 100000, 0, 100000, 1);
-    param_sample_negative_range_ = param::ParameterFactory::declareInterval("sample/negative range",
+    param_sample_negative_range_ = param::factory::declareInterval("sample/negative range",
                                           param::ParameterDescription("Range for negative samples"),
                                           0, 100000, 0, 100000, 1);
-    param_sample_random_seed_ = param::ParameterFactory::declareValue("sample/random seed",
+    param_sample_random_seed_ = param::factory::declareValue("sample/random seed",
                                           param::ParameterDescription("Seed for sample RNG"),
                                           0);
-    param_sample_exclusive_ = param::ParameterFactory::declareBool("sample/exclusive",
+    param_sample_exclusive_ = param::factory::declareBool("sample/exclusive",
                                                                    param::ParameterDescription("Sample positive/negative samples exclusively from positive or negative set"),
                                                                    true);
-    param_sample_sequential_ = param::ParameterFactory::declareBool("sample/sequential",
+    param_sample_sequential_ = param::factory::declareBool("sample/sequential",
                                                                     param::ParameterDescription("Select samples in time order, instead of random order"),
                                                                     true);
 
-    param_play_immediate_ = param::ParameterFactory::declareBool("play/immediate",
+    param_play_immediate_ = param::factory::declareBool("play/immediate",
                                          param::ParameterDescription("Immediatly send new entry"),
                                          false);
-    param_play_frame_ = param::ParameterFactory::declareValue("play/frame",
+    param_play_frame_ = param::factory::declareValue("play/frame",
                                           param::ParameterDescription("TF Frame name"),
                                           std::string("base_link"));
 
-    progress_ = param::ParameterFactory::declareOutputProgress("progress",
+    progress_ = param::factory::declareOutputProgress("progress",
                                                    param::ParameterDescription("Playing progess"));
 
     auto cond_playing = [this]() { return playing_; };

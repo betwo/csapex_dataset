@@ -47,31 +47,31 @@ void SandDatasetImporter::setup(NodeModifier& node_modifier)
 
 void SandDatasetImporter::setupParameters(Parameterizable& parameters)
 {
-    auto index_file    = param::ParameterFactory::declareFileInputPath("index file", "").build();
+    auto index_file    = param::factory::declareFileInputPath("index file", "").build();
 
-    auto reload        = param::ParameterFactory::declareTrigger("reload");
-    auto start_play    = param::ParameterFactory::declareTrigger(LABEL_START_PLAY);
-    auto stop_play     = param::ParameterFactory::declareTrigger("stop play");
-    auto start_instantly = param::ParameterFactory::declareBool("start instantly", false);
-    auto play_progress = param::ParameterFactory::declareOutputProgress("played").build<param::OutputProgressParameter>();
-    auto current_frame = param::ParameterFactory::declareOutputText("current frame").build<param::OutputTextParameter>();
+    auto reload        = param::factory::declareTrigger("reload");
+    auto start_play    = param::factory::declareTrigger(LABEL_START_PLAY);
+    auto stop_play     = param::factory::declareTrigger("stop play");
+    auto start_instantly = param::factory::declareBool("start instantly", false);
+    auto play_progress = param::factory::declareOutputProgress("played").build<param::OutputProgressParameter>();
+    auto current_frame = param::factory::declareOutputText("current frame").build<param::OutputTextParameter>();
 
     const std::map<std::string, int> CLASS_SET{
             { "background",       classToBit(Annotation::CLASS_BACKGROUND)},
             { "unknown",          classToBit(Annotation::CLASS_UNKNOWN)},
             { "person",           classToBit(Annotation::CLASS_PERSON)},
             { "person (partial)", classToBit(Annotation::CLASS_PARTIAL_PERSON)}};
-    auto load_classes = param::ParameterFactory::declareParameterBitSet("load classes", CLASS_SET,
+    auto load_classes = param::factory::declareParameterBitSet("load classes", CLASS_SET,
             classToBit(Annotation::CLASS_PERSON));
 
-    auto generate_negative = param::ParameterFactory::declareBool("negative samples/generate", false);
-    auto generate_seed   = param::ParameterFactory::declareValue("negative samples/random seed", 0);
-    auto negative_ratio  = param::ParameterFactory::declareRange("negative samples/ratio", 0.0, 8.0, 0.0, 0.1);
-    auto negative_width  = param::ParameterFactory::declareInterval("negative samples/width", 1, 640, 32, 256, 1);
-    auto negative_height = param::ParameterFactory::declareInterval("negative samples/height", 1, 640, 32, 256, 1);
-    auto negative_class  = param::ParameterFactory::declareValue("negative samples/class", -1);
-    auto no_overlap      = param::ParameterFactory::declareBool("negative samples/no overlap", true).build();
-    auto check_classes   = param::ParameterFactory::declareParameterBitSet("negative samples/overlap check classes", CLASS_SET,
+    auto generate_negative = param::factory::declareBool("negative samples/generate", false);
+    auto generate_seed   = param::factory::declareValue("negative samples/random seed", 0);
+    auto negative_ratio  = param::factory::declareRange("negative samples/ratio", 0.0, 8.0, 0.0, 0.1);
+    auto negative_width  = param::factory::declareInterval("negative samples/width", 1, 640, 32, 256, 1);
+    auto negative_height = param::factory::declareInterval("negative samples/height", 1, 640, 32, 256, 1);
+    auto negative_class  = param::factory::declareValue("negative samples/class", -1);
+    auto no_overlap      = param::factory::declareBool("negative samples/no overlap", true).build();
+    auto check_classes   = param::factory::declareParameterBitSet("negative samples/overlap check classes", CLASS_SET,
             classToBit(Annotation::CLASS_BACKGROUND) | classToBit(Annotation::CLASS_PERSON) | classToBit(Annotation::CLASS_PARTIAL_PERSON));
 
     auto play_only = [this]() { return playing_; };
@@ -80,7 +80,7 @@ void SandDatasetImporter::setupParameters(Parameterizable& parameters)
     auto no_ratio = [this]() { return param_generate_negative_ && param_negative_ratio_ == 0.0; };
     auto overlap_only = [this]() { return param_generate_negative_ && param_no_overlap_; };
 
-    param::Parameter::Ptr interval =  param::ParameterFactory::declareInterval("sample interval", 0, 0, 0, 0, 1);
+    param::Parameter::Ptr interval =  param::factory::declareInterval("sample interval", 0, 0, 0, 0, 1);
     interval_ = std::dynamic_pointer_cast<param::IntervalParameter>(interval);
     parameters.addParameter(interval_, interval_boundaries_);
 

@@ -64,17 +64,17 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
             {"1:1", Ratio_1_to_1},
             {"free", Ratio_free}
     };
-    import_path_ = param::ParameterFactory::declareDirectoryInputPath("path", "");
-    import_      = param::ParameterFactory::declareTrigger("import");
-    use_random_  = param::ParameterFactory::declareBool("random", false);;
-    random_seed_ = param::ParameterFactory::declareValue("random seed", 0);
-    interval_    = param::ParameterFactory::declareInterval<int>("selected samples", 0, 0, 0, 0, 1);
-    play_        = param::ParameterFactory::declareBool("play", false);
-    play_btn_    = param::ParameterFactory::declareTrigger("start play");
-    play_progress_ = param::ParameterFactory::declareOutputProgress("played");
-    prep_progress_ = param::ParameterFactory::declareOutputProgress("preparation");
-    non_human_rois_ = param::ParameterFactory::declareBool("generate non-human rois", true);
-    ratio_ = param::ParameterFactory::declareParameterSet("ratio",
+    import_path_ = param::factory::declareDirectoryInputPath("path", "");
+    import_      = param::factory::declareTrigger("import");
+    use_random_  = param::factory::declareBool("random", false);;
+    random_seed_ = param::factory::declareValue("random seed", 0);
+    interval_    = param::factory::declareInterval<int>("selected samples", 0, 0, 0, 0, 1);
+    play_        = param::factory::declareBool("play", false);
+    play_btn_    = param::factory::declareTrigger("start play");
+    play_progress_ = param::factory::declareOutputProgress("played");
+    prep_progress_ = param::factory::declareOutputProgress("preparation");
+    non_human_rois_ = param::factory::declareBool("generate non-human rois", true);
+    ratio_ = param::factory::declareParameterSet("ratio",
                                                           param::ParameterDescription("Ratio width to height."),
                                                           ratio_selection, (int) Ratio_1_to_2);
 
@@ -106,7 +106,7 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
                             not_playing,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
-    addConditionalParameter(param::ParameterFactory::declareRange("sample ratio", 0.01, 0.99, 0.5, 0.01),
+    addConditionalParameter(param::factory::declareRange("sample ratio", 0.01, 0.99, 0.5, 0.01),
                             random,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
@@ -114,7 +114,7 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
                             no_random,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
-    addConditionalParameter(param::ParameterFactory::declareBool("complement", false),
+    addConditionalParameter(param::factory::declareBool("complement", false),
                             not_playing,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
@@ -122,7 +122,7 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
                             not_playing,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
-    addConditionalParameter(param::ParameterFactory::declareBool("stride", false),
+    addConditionalParameter(param::factory::declareBool("stride", false),
                             not_playing,
                             stride_);
 
@@ -130,15 +130,15 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
                             not_playing,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
-    addConditionalParameter(param::ParameterFactory::declareRange("min generation size", 10, 640, 32, 1),
+    addConditionalParameter(param::factory::declareRange("min generation size", 10, 640, 32, 1),
                             non_human_generation,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
-    addConditionalParameter(param::ParameterFactory::declareRange("max generation size", 10, 640, 128, 1),
+    addConditionalParameter(param::factory::declareRange("max generation size", 10, 640, 128, 1),
                             non_human_generation,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
-    addConditionalParameter(param::ParameterFactory::declareBool("publish partly visible humans", true),
+    addConditionalParameter(param::factory::declareBool("publish partly visible humans", true),
                             not_playing,
                             std::bind(&PeopleDatasetImporterLegacy::resetPlaySet, this));
 
@@ -149,7 +149,7 @@ void PeopleDatasetImporterLegacy::setupParameters(Parameterizable &parameters)
     addParameter(play_btn_, [this](csapex::param::Parameter*) {
         play_->set(true);
     });
-    addParameter(param::ParameterFactory::declareBool("hold", false),
+    addParameter(param::factory::declareBool("hold", false),
                  hold_);
     addConditionalParameter(prep_progress_, playing);
     addConditionalParameter(play_progress_, playing);
