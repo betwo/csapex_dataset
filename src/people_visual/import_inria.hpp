@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <random>
 #include <opencv2/opencv.hpp>
 
 namespace csapex

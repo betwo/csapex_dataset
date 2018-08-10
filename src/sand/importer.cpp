@@ -13,6 +13,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/mpl/for_each.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <random>
 
 using namespace csapex;
 using namespace csapex::connection_types;
