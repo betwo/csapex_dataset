@@ -16,7 +16,7 @@
 #include <csapex/param/output_progress_parameter.h>
 #include <csapex/param/range_parameter.h>
 #include <csapex/profiling/timer.h>
-#include <csapex/profiling/interlude.hpp>
+#include <csapex/profiling/trace.hpp>
 
 #include <csapex_point_cloud/msg/point_cloud_message.h>
 #include <csapex_opencv/cv_mat_message.h>
@@ -156,7 +156,7 @@ void PeopleDatasetImporter::process()
             depth_msg->frame_id = frame;
             visual_msg->frame_id = frame;
             {
-                INTERLUDE("load");
+                TRACE("load");
                 read_to(entry, visual_msg->value, depth_msg->value, *cloud);
                 pcl_msg->value = cloud;
                 roi_msg->assign(entry.rois.begin(), entry.rois.end());
@@ -169,7 +169,7 @@ void PeopleDatasetImporter::process()
             }
 
             {
-                INTERLUDE("publish");
+                TRACE("publish");
                 msg::publish(out_depth_image_, depth_msg);
                 msg::publish(out_bgr_image_, visual_msg);
                 msg::publish(out_pointcloud_, pcl_msg);
