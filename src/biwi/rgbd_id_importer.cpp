@@ -103,7 +103,7 @@ bool RGBDIDImporter::canProcess() const
 
 void RGBDIDImporter::process()
 {
-    if (data_iterator_ != data_.end())
+    if (data_iterator_ != data_end_)
     {
         auto now = std::chrono::system_clock::now();
         auto duration = now.time_since_epoch();
@@ -359,7 +359,7 @@ void RGBDIDImporter::startPlay()
 
     playing_ = true;
     play_progress_->set<int>(0);
-    ainfo << "Start playing..." << std::endl;
+    ainfo << "Start playing " + std::to_string(data_entries_to_play_) + " entries..." << std::endl;
 }
 
 void RGBDIDImporter::triggerStartPlayEvent()

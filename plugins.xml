@@ -32,6 +32,10 @@
         <description>Importer for the biwi RGBD-ID dataset.</description>
         <tags>dataset</tags>
     </class>
+    <class type="csapex::dataset::biwi::Evaluation" base_class_type="csapex::Node">
+        <description>Evaluation for the biwi RGBD-ID dataset.</description>
+        <tags>dataset</tags>
+    </class>
 
     <class type="csapex::dataset::sand::SandDatasetImporter" base_class_type="csapex::Node">
         <description>Importer for Sand datasets.</description>
