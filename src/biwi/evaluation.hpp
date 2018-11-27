@@ -18,10 +18,12 @@ private:
     Input*      in_labels_;
     Output*     out_tpr_;
     Output*     out_fdr_;
+    Output*     out_iou_;
 
     std::size_t count_;
     double      tpr_;
     double      fdr_;
+    double      iou_;
 
     virtual void reset() override;
     double mean(const double &prev, const double &curr, const std::size_t &n) const;

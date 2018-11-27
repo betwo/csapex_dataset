@@ -31,6 +31,7 @@ void Evaluation::setup(NodeModifier &node_modifier)
 
     out_tpr_ = node_modifier.addOutput<double>("TPR");
     out_fdr_ = node_modifier.addOutput<double>("FDR");
+    out_iou_ = node_modifier.addOutput<double>("IoU");
 }
 
 void Evaluation::setupParameters(Parameterizable &parameters)
@@ -40,6 +41,8 @@ void Evaluation::setupParameters(Parameterizable &parameters)
     parameters.addParameter(param::factory::declareOutputText("Count"));
     parameters.addParameter(param::factory::declareOutputText("TPR"));
     parameters.addParameter(param::factory::declareOutputText("FDR"));
+    parameters.addParameter(param::factory::declareOutputText("IoU"));
+
 }
 
 void Evaluation::process()
@@ -63,6 +66,7 @@ void Evaluation::process()
     // estimate tpr and fdr for all detected clusters
     double tpr = 0.0;
     double fdr = 0.0;
+    double iou = 0.0;
     for (const pcl::PointIndices &cluster : *clusters) {
         std::size_t true_positives  = 0u;
         std::size_t false_positives = 0u;
@@ -80,26 +84,38 @@ void Evaluation::process()
         // tpr and fdr of the current cluster
         const double tpr_cluster = static_cast<double>(true_positives) / static_cast<double>(positives);
         const double fdr_cluster = static_cast<double>(false_positives) / static_cast<double>(true_positives + false_positives);
+        const double iou_cluster = static_cast<double>(true_positives) / static_cast<double>(positives + false_positives);
 
         // update tpr and fdr for the current frame
         if (tpr_cluster > tpr) {
             tpr = tpr_cluster;
             fdr = fdr_cluster;
+            iou = iou_cluster;
         }
     }
 
     // update global means
     tpr_ = mean(tpr_, tpr, count_);
     fdr_ = mean(fdr_, fdr, count_);
+    iou_ = mean(iou_, iou, count_);
     ++count_;
 
     // plot info
     setParameter("Count", "Count: " + std::to_string(count_));
     setParameter("TPR",   "TPR: "   + std::to_string(tpr_));
     setParameter("FDR",   "FDR: "   + std::to_string(fdr_));
+    setParameter("IoU",   "IoU: "   + std::to_string(iou_));
+
+    //// DEBUG
+    ainfo << "FRAME " << count_ << "\n"
+    << "TPR = " << tpr_ << "\n"
+    << "FDR = " << fdr_ << "\n"
+    << "IoU = " << iou_ << "\n";
+    //// DEBUG
 
     msg::publish(out_fdr_, fdr_);
     msg::publish(out_tpr_, tpr_);
+    msg::publish(out_iou_, iou_);
 }
 
 void Evaluation::reset()
@@ -107,6 +123,7 @@ void Evaluation::reset()
     count_ = 0u;
     tpr_   = 0.0;
     fdr_   = 0.0;
+    iou_   = 0.0;
 }
 
 double Evaluation::mean(const double &prev, const double &curr, const std::size_t &n) const
