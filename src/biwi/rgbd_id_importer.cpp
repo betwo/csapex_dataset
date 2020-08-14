@@ -117,9 +117,9 @@ void RGBDIDImporter::process()
         auto  indices_msg    = std::make_shared<std::vector<pcl::PointIndices>>();
         auto  incides_msgs   = std::make_shared<std::vector<PointIndicesMessage>>();
 
-        cv::Mat mask        = cv::imread(entry.path_mask.string(),  CV_LOAD_IMAGE_UNCHANGED);
-        cv::Mat depth_image = cv::imread(entry.path_depth.string(), CV_LOAD_IMAGE_UNCHANGED);
-        cv::Mat rgb_image   = cv::imread(entry.path_rgb.string(),   CV_LOAD_IMAGE_UNCHANGED);
+        cv::Mat mask        = cv::imread(entry.path_mask.string(),  cv::IMREAD_UNCHANGED);
+        cv::Mat depth_image = cv::imread(entry.path_depth.string(), cv::IMREAD_UNCHANGED);
+        cv::Mat rgb_image   = cv::imread(entry.path_rgb.string(),   cv::IMREAD_UNCHANGED);
 
         const static float d_cx     = 319.5f;
         const static float d_cy     = 239.5f;

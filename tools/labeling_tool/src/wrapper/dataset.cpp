@@ -67,7 +67,7 @@ Dataset::Entry* Dataset::Entry::create(const EntryReference &ref)
         if(entry->visual_image.type() == CV_16UC1) {
             cv::normalize(entry->visual_image, entry->visual_image, 0, 255, cv::NORM_MINMAX, CV_8U);
             cv::equalizeHist(entry->visual_image, entry->visual_image);
-            cv::cvtColor(entry->visual_image, entry->visual_image, CV_GRAY2BGR);
+            cv::cvtColor(entry->visual_image, entry->visual_image, cv::COLOR_GRAY2BGR);
         }
     }
 
